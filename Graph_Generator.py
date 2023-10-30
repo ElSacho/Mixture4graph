@@ -21,6 +21,7 @@ class GraphGenerator(nx.Graph):
                 proba=self.pi[vertices_clusters[i]][vertices_clusters[j]]
                 if random.random()<proba:
                     G.add_edge(i,j)
+                    # test
         return G
     
 

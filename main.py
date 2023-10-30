@@ -202,7 +202,7 @@ class Solver():
                             val = (pi[k,l]**graph_edges[i,j]) * (1 - pi[k,l])**(1-graph_edges[i,j]) 
                             p *= val ** tau[j,l]
                 # print(p)
-                new_tau[i,l] =  p # priors[l] * p
+                new_tau[i,l] = priors[l] * p
                 
         new_tau = self.normalize_tau(new_tau)
         # product_axis3 = np.prod(M, axis=3)
@@ -316,7 +316,7 @@ class Solver():
             graph_edges[j, i] = 1 
             
         tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
-        # tau = np.ones((n_nodes, n_clusters))
+        tau = np.ones((n_nodes, n_clusters))
         tau = self.normalize_tau(tau)
         theta = self.get_theta_from_tau(tau)
                 

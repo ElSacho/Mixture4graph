@@ -19,7 +19,7 @@ def generate_random_graph(size):
     G = nx.Graph()
 
     # Ajoutez n nœuds au graphe
-    G.add_nodes_from(range(1, size+1))
+    G.add_nodes_from(range(size))
 
     # Ajoutez des arêtes de manière aléatoire
     for node1 in G.nodes:

@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np 
 import random
-
+import warnings
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
 
@@ -139,12 +139,10 @@ class Solver():
         n_nodes, _ = tau.shape
         tau_replicated = np.repeat(tau[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
         theta = tau_replicated * tau_replicated.transpose((1, 0, 3, 2))
-        
-        # theta = n
-        
-        return theta
+                
+        return theta # I verified this function
     
-    def E(self, tau, graph_edges, priors, pi, eps=1e-4, max_iter = 100):
+    def E(self, tau, graph_edges, priors, pi, eps=1e-6, max_iter = 10):
         """_summary_
 
         Args:
@@ -156,13 +154,14 @@ class Solver():
             tau - np.array: approximation of the priors, size n_clusters
         """
         new_tau = self.fixed_point_function(tau, graph_edges, priors, pi)        
-        convergence_finished = self.is_tau_convergence_ok(tau, new_tau, eps)
+        difference_matrix = np.abs(new_tau - tau)
+        convergence_finished = np.all(difference_matrix < eps)
         tau = new_tau.copy()
         
         for i in tqdm(range(max_iter)):
             new_tau = self.fixed_point_function(tau, graph_edges, priors, pi)
             difference_matrix = np.abs(new_tau - tau)
-            convergence_finished = self.is_tau_convergence_ok(tau, new_tau, eps)
+            convergence_finished = np.all(difference_matrix < eps)
             tau = new_tau.copy()
             if convergence_finished:
                 break    
@@ -237,7 +236,7 @@ class Solver():
         new_tau = self.normalize_tau(new_tau)
         return new_tau
    
-    def M(self, graph_edges, tau, theta):
+    def M2(self, graph_edges, tau, theta):
         """_summary_
 
         Args:
@@ -279,39 +278,37 @@ class Solver():
         # print("The two methods in the M algorithm to calculate pi are egale ? : ", pi == pi2)
 
         return priors, pi
-         
-    def M_sparse(self, graph_edges, tau, theta):
+  
+    def M(self, graph_edges, tau, theta):
         """_summary_
 
         Args:
-            graph_edges (csr_matrix): the graph we are studiying 
+            graph_edges (np.array): the graph we are studiying shape (n_nodes, n_nodes)
             tau (np.array): tau[i,q] = P(Z_iq = 1) i in node, q in cluster shape of (n_nodes, n_clusters)
-            theta (csr_matrix): shape of (n_nodes, n_nodes, n_clusters, n_clusters)
+            theta (np.array): shape of (n_nodes, n_nodes, n_clusters, n_clusters)
 
         Returns:
-            _type_: _description_
+            priors np.array: (n_clusters)
+            pi np.array: (n_clusters, n_clusters)
         """
-        priors = np.mean(tau, axis=0)
+        # Get the prior
+        priors = np.mean(tau, axis=0) # (n_clusters)
         
+        # Get the nominator of equation in 5.3
+        thetaX = theta * graph_edges[:, :, np.newaxis, np.newaxis] # (n_nodes, n_nodes, n_clusters, n_clusters)    
+        thetaX = np.sum(np.sum(thetaX, axis=1), axis=0) # (n_clusters, n_clusters)
+        # Get the denominator of equation in 5.3
+        divided = np.sum(np.sum(thetaX, axis=1), axis=0) # (n_clusters, n_clusters)
         
-        divided = np.sum(np.sum(theta, axis=1), axis=0)
-
-        # Assurez-vous que les dimensions sont correctes
-        n_nodes, n_clusters = theta.shape[0], theta.shape[2]
-
-        # Initialisation de la matrice creuse tX
-        thetaX = csr_matrix((n_nodes, n_nodes, n_clusters, n_clusters))
-
-        # Parcourez les indices non nuls de la matrice edges
-        for i, j, _ in zip(*graph_edges.nonzero()):
-            thetaX[i, j, :, :] = theta[i, j,:,:] * graph_edges[i, j]
-        
+        # Get the approximation for pi              
+        pi = thetaX / divided # (n_clusters, n_clusters)
         return priors, pi
-   
+         
     def normalize_tau(self, tau):
-        return tau / tau.sum(axis=1, keepdims=True)
+        tau = tau / tau.sum(axis=1, keepdims=True)
+        return tau  # je suis sur de ça
         
-    def EM_algorithm(self, graph, n_clusters, n_iter = 500):        
+    def EM_algorithm(self, graph, n_clusters, n_iter = 500):
         n_nodes = len(graph.nodes)
         graph_edges = np.zeros((n_nodes, n_nodes), dtype=int)
         for i, j in graph.edges:
@@ -319,6 +316,7 @@ class Solver():
             graph_edges[j, i] = 1 
             
         tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
+        # tau = np.ones((n_nodes, n_clusters))
         tau = self.normalize_tau(tau)
         theta = self.get_theta_from_tau(tau)
                 
@@ -326,15 +324,10 @@ class Solver():
             # M step
             priors, pi = self.M(graph_edges, tau, theta)
             # print(pi.shape)
-            # print(e+1)
+            # print(priors.shape)
             # E step
             tau, theta = self.E(tau, graph_edges, priors, pi)
+            # print(tau)
+            # print(theta.shape)
             
         return priors, pi
-        
-    def solve(self):
-        pass
-
-        
-        
-        

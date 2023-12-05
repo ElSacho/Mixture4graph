@@ -153,19 +153,26 @@ class Solver():
         Returns:
             tau - np.array: approximation of the priors, size n_clusters
         """
-        new_tau = self.fixed_point_function(tau, graph_edges, priors, pi)        
-        difference_matrix = np.abs(new_tau - tau)
+        n_nodes, n_clusters = tau.shape
+        tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
+        # tau = np.ones((n_nodes, n_clusters))
+        tau = self.normalize_tau(tau)
+        old_tau = tau.copy()
+        new_tau = self.fixed_point_function2(tau, graph_edges, priors, pi).copy()    
+        difference_matrix = np.abs(new_tau - old_tau)
         convergence_finished = np.all(difference_matrix < eps)
         tau = new_tau.copy()
-        
-        for i in tqdm(range(max_iter)):
-            new_tau = self.fixed_point_function(tau, graph_edges, priors, pi)
+        for i in range(max_iter):
+            new_tau = self.fixed_point_function2(tau, graph_edges, priors, pi).copy()
             difference_matrix = np.abs(new_tau - tau)
             convergence_finished = np.all(difference_matrix < eps)
             tau = new_tau.copy()
             if convergence_finished:
-                break    
-        print(np.mean(difference_matrix))
+                print("Convergence in ", i, ' iterations')
+                break
+        if not convergence_finished:
+            print("fixed_point_function2 did not converged")
+        print(" Difference matrix : ",np.mean(difference_matrix))
         theta = self.get_theta_from_tau(tau)
         return tau, theta
     
@@ -199,8 +206,26 @@ class Solver():
                 for j in range(n_nodes):
                     if j!=i:
                         for k in range(n_clusters):
-                            val = (pi[k,l]**graph_edges[i,j]) * (1 - pi[k,l])**(1-graph_edges[i,j]) 
-                            p *= val ** tau[j,l]
+                            val = (pi[k,l]**(graph_edges[i,j])*tau[j,l]) * (1 - pi[k,l])**(tau[j,l]*(1-graph_edges[i,j]))
+                            if val == 0:
+                            #     print(i,j,k,l)
+                            #     print("when val equal 0 : ")
+                            #     print("1 - pi : ",1-pi[k,l])
+                            #     print("1 - graph_edges[i,j] : ", 1-graph_edges[i,j])
+                            #     print("tau j,l : ",tau[j,l])
+                            #     print((1 - pi[k,l])**(1-graph_edges[i,j]) )
+                                val = 1
+                            p *= val
+                            
+                            # Avant : 
+                            # val = (pi[k,l]**graph_edges[i,j]) * (1 - pi[k,l])**(1-graph_edges[i,j]) 
+                            # if val == 0:
+                            #     print(i,j,k,l)
+                            #     print("when val equal 0 : ")
+                            #     print("1 - pi : ",1-pi[k,l])
+                            #     print("1 - graph_edges[i,j] : ", 1-graph_edges[i,j])
+                            #     print((1 - pi[k,l])**(1-graph_edges[i,j]) )
+                            # p *= val ** tau[j,l]
                 # print(p)
                 new_tau[i,l] = priors[l] * p
                 
@@ -209,7 +234,7 @@ class Solver():
         
         return new_tau  
     
-    def fixed_point_function(self, tau, graph_edges, priors, pi ):
+    def fixed_point_function(self, old_tau, graph_edges, priors, pi ):
         """_summary_
 
         Args:
@@ -221,20 +246,31 @@ class Solver():
         Returns:
             _type_: _description_
         """
+        new_tau = np.zeros_like(old_tau)
         
-        new_tau = np.zeros_like(tau)
+        exp_term = (pi ** graph_edges[:, :,np.newaxis, np.newaxis].copy()) * ((1 - pi) **(1- graph_edges[:, :,np.newaxis, np.newaxis].copy())) # This one works I have verifide
+        print("exp term :")
+        print(exp_term)
+        K = exp_term.copy() ** old_tau[np.newaxis, :, np.newaxis, :].copy() # K[i,j,k,l] = M[i,j,k,l] ** tau[j,l]
+        print("K term  before prod:")
+        print(K)
         
-        exp_term = (pi ** graph_edges[:, :,np.newaxis, np.newaxis]) * ((1 - pi) **(1- graph_edges[:, :,np.newaxis, np.newaxis])) # This one works I have verifide
-        K = exp_term ** tau[np.newaxis, :, np.newaxis, :] # K[i,j,k,l] = M[i,j,k,l] ** tau[j,l]
-        K = np.prod(K, axis=3)
+        K = np.prod(K, axis=3).copy()
+        print("K term  after prod:")
+        print(K)
         
         for i in range(K.shape[0]):
             K[i, i, :] = 1
 
         new_tau = np.prod(K, axis=1)
+        print("new tau before priors : ", new_tau[0])
         new_tau = new_tau * priors
+        print("new tau after priors : ", new_tau[0])
         new_tau = self.normalize_tau(new_tau)
-        return new_tau
+        print("new tau after norm : ", new_tau[0])
+        difference_matrix = np.abs(new_tau - old_tau)
+        # print("In fixed funtion : ",np.mean(difference_matrix))
+        return new_tau.copy()
    
     def M2(self, graph_edges, tau, theta):
         """_summary_
@@ -305,29 +341,94 @@ class Solver():
         return priors, pi
          
     def normalize_tau(self, tau):
-        tau = tau / tau.sum(axis=1, keepdims=True)
+        normalize = tau.copy()
+        tau = tau / normalize.sum(axis=1, keepdims=True)
         return tau  # je suis sur de ça
         
     def EM_algorithm(self, graph, n_clusters, n_iter = 500):
+        # Graph to np
         n_nodes = len(graph.nodes)
         graph_edges = np.zeros((n_nodes, n_nodes), dtype=int)
         for i, j in graph.edges:
             graph_edges[i, j] = 1
             graph_edges[j, i] = 1 
-            
+        
+        # Initialize tau
         tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
-        tau = np.ones((n_nodes, n_clusters))
+        # tau = np.ones((n_nodes, n_clusters))
         tau = self.normalize_tau(tau)
         theta = self.get_theta_from_tau(tau)
-                
+        
+        # size = 52
+        # pi = np.array([[0,1,0,0],[1,0,1,0],[0,1,0,1],[0,0,1,0]])
+        # priors = np.array([25,1,1,25])
+        # priors = priors/size
+        
+        pi = np.random.uniform(0, 1, size=(n_clusters, n_clusters))
+        priors = np.random.uniform(0, 1, size=n_clusters)
+        priors = priors / np.sum(priors)
+        
+        
         for i in range(n_iter):
-            # M step
-            priors, pi = self.M(graph_edges, tau, theta)
-            # print(pi.shape)
-            # print(priors.shape)
-            # E step
+            print('E step')
             tau, theta = self.E(tau, graph_edges, priors, pi)
-            # print(tau)
-            # print(theta.shape)
+            
+            print('M step')
+            priors, pi = self.M(graph_edges, tau, theta)
+            print("priors : ")
+            print( priors)
+            print("pi : ")
+            print( pi)
+            
+            # print("tau : ")
+            
+            # print(" theta : ")
+            # print(theta)
+            
             
         return priors, pi
+
+# solver = Solver()
+# generator = GraphGenerator()
+
+
+# size = 52
+# pi = np.array([[0,1,0,0],[1,0,1,0],[0,1,0,1],[0,0,1,0]])
+# priors = np.array([25,1,1,25])
+# priors = priors/size
+
+# graph = generator.generate(size, pi, priors)
+
+# # Graph to np
+# n_nodes = len(graph.nodes)
+# graph_edges = np.zeros((n_nodes, n_nodes), dtype=int)
+# for i, j in graph.edges:
+#     graph_edges[i, j] = 1
+#     graph_edges[j, i] = 1 
+
+# # Initialize tau
+# n_clusters = 4
+# tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
+# # tau = np.ones((n_nodes, n_clusters))
+# tau = solver.normalize_tau(tau)
+# theta = solver.get_theta_from_tau(tau)
+
+# n_iter = 10
+# for i in range(n_iter):
+    
+#     # size = 102
+#     # pi = np.array([[0,1,0,0],[1,0,1,0],[0,1,0,1],[0,0,1,0]])
+#     # priors = np.array([50,1,1,50])
+#     # priors = priors/size
+#     # print("priors : ")
+#     # print( priors)
+#     # print("pi : ")
+#     # print( pi)
+#     # print('E step')
+#     tau, theta = solver.E(tau, graph_edges, priors, pi)
+#     print("tau : ")
+#     print(tau)
+#     print('M step')
+#     priors, pi = solver.M(graph_edges, tau, theta)
+#     # print(" theta : ")
+#     # print(theta)

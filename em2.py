@@ -76,61 +76,44 @@ def b_pow(X_ij, pi_ql, tau_jl):
     return b
 
 
-def fixed_function_i(old_tau, old_new_tau_i, X, pi, priors, i):
+def fixed_function_i_q(i, q, old_tau, X, pi, priors):
     n_nodes, n_clusters = old_tau.shape
     new_tau_i = np.zeros(n_clusters)
     
     s = 0
-    for q in range(n_clusters):
-        val_iq = 1
-        for j in range(n_nodes):
-            for l in range(n_clusters):
-                if j != i :
-                    b = b_pow(X[i,j], pi[q,l], old_tau[j,l])
-                    if b == 0:
-                        # val_iq *= b
-                        continue
-                        # print("X : ", X[i,j], 'for (i,j) = ', i,j)
-                        # print("pi[q,l] : ", pi[q,l], 'for (q,l) = ', q,l)
-                        # print("tau ; ", old_tau[j,l])
-                        # or we store those indexes and then we will change the values
-                        # new_tau[i,q] = 0
-                        # new_tau[i,l] = 0
-                        # new_tau[j,q] = 0
-                        # new_tau[j,l] = 0
-                    else:
-                        val_iq *= b
-        new_tau_i[q] = priors[q] * val_iq
-        s += new_tau_i[q]
-        # print(new_tau[i,q])
-    new_tau_i = new_tau_i / s
-    return new_tau_i
+    val_iq = 1
+    for j in range(n_nodes):
+        for l in range(n_clusters):
+            if j != i :
+                b = b_pow(X[i,j], pi[q,l], old_tau[j,l])
+                if b != 0:
+                    val_iq *= b
+
+    return priors[q] * val_iq
 
 
-def approximate_tau_step_by_step(old_tau, X, pi, priors, eps = 1e-04, max_iter = 50):
+def approximate_tau_step_by_step(tau, X, pi, priors, eps = 1e-04, max_iter = 50):
     
-    # old_tau = np.random.uniform(0, 1, size=(X.shape[0], pi.shape[0]))
-    # old_tau = old_tau / old_tau.sum(axis=1, keepdims=True)
-    new_tau = np.zeros_like(old_tau)
-
-    for i in range(X.shape[0]):
-        current_iter = 0
-        # old_new_tau_i = np.random.uniform(0, 1, size=(pi.shape[0]))
-        old_new_tau_i = old_tau[i].copy()
-        while current_iter < max_iter:
-            new_tau_i = fixed_function_i(old_tau, old_new_tau_i, X, pi, priors, i)
-            print("new tau i : ", i)
-            print(new_tau_i)
-            print("n_iter for the position ", i, ": ", current_iter)
-            difference_matrix = np.abs(new_tau_i - old_new_tau_i)
-            if np.all(difference_matrix < eps):
-                break    
-            current_iter += 1
-            old_new_tau_i = new_tau_i.copy()
-        new_tau[i,:] = new_tau_i.copy()
-            
+    n_nodes = X.shape[0]
+    n_clusters = pi.shape[0]
     
-    return new_tau
+    finish = False
+    current_iter = 0
+
+    while not finish and current_iter < max_iter:
+        
+        old_tau = tau.copy()
+        for i in range(n_nodes):
+            for q in range(n_clusters):
+                tau[i,q] = fixed_function_i_q(i, q, old_tau, X, pi, priors)
+        
+        tau = tau / tau.sum(axis=1, keepdims=True)
+        difference_matrix = np.abs(tau - old_tau)
+        if np.all(difference_matrix < eps):
+            finish = True    
+        current_iter += 1
+
+    return tau
 
 def fixed_function(old_tau, X, pi, priors):
     n_nodes, n_clusters = old_tau.shape
@@ -204,8 +187,8 @@ def main(X, n_clusters, max_iter):
     current_iter = 0
     while current_iter < max_iter:
         priors, pi = return_priors_pi(X, tau)
-        # tau = approximate_tau_step_by_step(tau, X, pi, priors)
-        tau = approximate_tau(tau, X, pi, priors)
+        tau = approximate_tau_step_by_step(tau, X, pi, priors)
+        # tau = approximate_tau(tau, X, pi, priors)
         # tau = tau / tau.sum(axis=1, keepdims=True)
         # print("tau")
         # print(tau)

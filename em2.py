@@ -47,7 +47,6 @@ def return_priors_pi(X, tau):
     #                    denominator += tau[i,q] * tau[j,l]
     #         pi[q,l] = nominator/denominator
     #         pi[l,q] = nominator/denominator
-    
     return prior, pi
 
 
@@ -188,7 +187,7 @@ def main(X, n_clusters, max_iter):
     while current_iter < max_iter:
         priors, pi = return_priors_pi(X, tau)
         tau = approximate_tau_step_by_step(tau, X, pi, priors)
-        print("pi : \n",pi)
+        # print("pi : \n",pi)
         # tau = approximate_tau(tau, X, pi, priors)
         # tau = tau / tau.sum(axis=1, keepdims=True)
         # print("tau")
@@ -201,7 +200,7 @@ def main_with_tau(X, tau, n_clusters, max_iter):
     while current_iter < max_iter:
         priors, pi = return_priors_pi(X, tau)
         tau = approximate_tau_step_by_step(tau, X, pi, priors)
-        print("pi : \n",pi)
+        # print("pi : \n",pi)
         # tau = approximate_tau(tau, X, pi, priors)
         # tau = tau / tau.sum(axis=1, keepdims=True)
         # print("tau")
@@ -217,4 +216,3 @@ def get_X_from_graph(graph):
         graph_edges[j, i] = 1
         
     return graph_edges
-    

@@ -75,7 +75,7 @@ def b_pow(X_ij, pi_ql, tau_jl):
     return b
 
 
-def fixed_function_i_q(i, q, old_tau, X, pi, priors):
+def fixed_function_i_q(i, q, old_tau, X, pi, priors, norm):
     n_nodes, n_clusters = old_tau.shape
     new_tau_i = np.zeros(n_clusters)
     
@@ -88,7 +88,7 @@ def fixed_function_i_q(i, q, old_tau, X, pi, priors):
                 if b != 0:
                     val_iq *= b
 
-    return priors[q] * val_iq
+    return priors[q] * val_iq / norm
 
 
 def approximate_tau_step_by_step(tau, X, pi, priors, eps = 1e-04, max_iter = 50):
@@ -103,10 +103,12 @@ def approximate_tau_step_by_step(tau, X, pi, priors, eps = 1e-04, max_iter = 50)
         
         old_tau = tau.copy()
         for i in range(n_nodes):
+            norm_i = tau.sum(axis=1, keepdims=True)[i]
             for q in range(n_clusters):
-                tau[i,q] = fixed_function_i_q(i, q, old_tau, X, pi, priors)
+                tau[i,q] = fixed_function_i_q(i, q, old_tau, X, pi, priors, norm_i)
         
         tau = tau / tau.sum(axis=1, keepdims=True)
+        # print(tau)
         difference_matrix = np.abs(tau - old_tau)
         if np.all(difference_matrix < eps):
             finish = True    
@@ -186,7 +188,9 @@ def main(X, n_clusters, max_iter):
     current_iter = 0
     while current_iter < max_iter:
         priors, pi = return_priors_pi(X, tau)
+        # print(priors)
         tau = approximate_tau_step_by_step(tau, X, pi, priors)
+        # print(tau)
         # print("pi : \n",pi)
         # tau = approximate_tau(tau, X, pi, priors)
         # tau = tau / tau.sum(axis=1, keepdims=True)
@@ -199,7 +203,9 @@ def main_with_tau(X, tau, n_clusters, max_iter):
     current_iter = 0
     while current_iter < max_iter:
         priors, pi = return_priors_pi(X, tau)
+        # print(priors)
         tau = approximate_tau_step_by_step(tau, X, pi, priors)
+        # print(tau)
         # print("pi : \n",pi)
         # tau = approximate_tau(tau, X, pi, priors)
         # tau = tau / tau.sum(axis=1, keepdims=True)

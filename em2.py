@@ -3,7 +3,44 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
+from scipy.sparse.linalg import eigs
+from scipy.sparse import diags, eye 
+from random import randint
+from sklearn.cluster import KMeans
 
+def spectral_clustering(G, k):
+    """
+    :type G : networkX graph
+    :type k : int
+    :rtype : dict -> the algorithm must return a dictionary keyed by node to the cluster to which the node belongs
+    """
+    A = nx.adjacency_matrix(G)
+    diagonals = [1/G.degree[node] for node in G.nodes()]
+    D_inv = diags(diagonals)
+    L = eye(G.number_of_nodes()) - D_inv @ A
+    # L = nx.laplacian_matrix(G).astype('float')
+    
+    # d = k in general but can be equal to other values
+    val , vec_eigs = eigs(L, k, which='SM')
+    val , vec_eigs = eigs(L, k, which='SR')
+    # for i in range(len(val)+1):
+    #     print(val[i].real)
+    kmeans = KMeans(n_clusters=k)
+    # vec_eigs = vec_eigs.real.T
+    
+    clusters = kmeans.fit_predict(vec_eigs.real)
+    
+    clustering = {}
+    
+    i = 0
+    
+    tau = np.zeros((len(diagonals),k))
+    
+    for node in G.nodes():
+        tau[i, clusters[i]] = 1
+        i += 1
+    
+    return tau
 
 def return_priors_pi(X, tau):
     """
@@ -87,9 +124,43 @@ def fixed_function_i_q(i, q, old_tau, X, pi, priors, norm):
                 b = b_pow(X[i,j], pi[q,l], old_tau[j,l])
                 if b != 0:
                     val_iq *= b
+                else : val_iq *= b
 
     return priors[q] * val_iq / norm
 
+def appro_all_in_one(tau, X, pi, priors, eps = 1e-04, max_iter = 50):
+    n_nodes = X.shape[0]
+    n_clusters = pi.shape[0]
+    
+    finish = False
+    current_iter = 0
+
+    while not finish and current_iter < max_iter:
+        
+        old_tau = tau.copy()
+        for i in range(n_nodes):
+            norm_i = tau.sum(axis=1, keepdims=True)[i]
+            for q in range(n_clusters):
+                for j in range(n_nodes):
+                    for l in range(n_clusters):
+                        if j != i :
+                            b = b_pow(X[i,j], pi[q,l], old_tau[j,l])
+                            if b != 0:
+                                val_iq *= b
+                            else : val_iq *= b
+                
+                
+                
+                tau[i,q] = fixed_function_i_q(i, q, old_tau, X, pi, priors, 1)
+        
+        tau = tau / tau.sum(axis=1, keepdims=True)
+        # print(tau)
+        difference_matrix = np.abs(tau - old_tau)
+        if np.all(difference_matrix < eps):
+            finish = True    
+        current_iter += 1
+
+    return tau
 
 def approximate_tau_step_by_step(tau, X, pi, priors, eps = 1e-04, max_iter = 50):
     
@@ -105,7 +176,7 @@ def approximate_tau_step_by_step(tau, X, pi, priors, eps = 1e-04, max_iter = 50)
         for i in range(n_nodes):
             norm_i = tau.sum(axis=1, keepdims=True)[i]
             for q in range(n_clusters):
-                tau[i,q] = fixed_function_i_q(i, q, old_tau, X, pi, priors, norm_i)
+                tau[i,q] = fixed_function_i_q(i, q, old_tau, X, pi, priors, 1)
         
         tau = tau / tau.sum(axis=1, keepdims=True)
         # print(tau)
@@ -176,20 +247,22 @@ def main(X, n_clusters, max_iter):
     n_nodes, _ = X.shape
     # pi = np.random.uniform(0, 1, size=(n_clusters, n_clusters))
     # pi = (pi + pi.T) / 2
-    
+    G = nx.from_numpy_array(X)
+    tau = spectral_clustering(G, n_clusters)
+    print(np.mean(tau, axis = 0))
     # priors = np.random.uniform(0, 1, size=n_clusters)
     # priors = priors / np.sum(priors)
     
-    tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
-    tau = tau / tau.sum(axis=1, keepdims=True)
+    # tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
+    # tau = tau / tau.sum(axis=1, keepdims=True)
     # print("tau")
     # print(tau)
     
     current_iter = 0
     while current_iter < max_iter:
-        priors, pi = return_priors_pi(X, tau)
+        priors, pi = return_priors_pi(X, tau.copy())
         # print(priors)
-        tau = approximate_tau_step_by_step(tau, X, pi, priors)
+        tau = approximate_tau_step_by_step(tau.copy(), X, pi.copy(), priors.copy())
         # print(tau)
         # print("pi : \n",pi)
         # tau = approximate_tau(tau, X, pi, priors)

@@ -188,6 +188,7 @@ def main(X, n_clusters, max_iter):
     while current_iter < max_iter:
         priors, pi = return_priors_pi(X, tau)
         tau = approximate_tau_step_by_step(tau, X, pi, priors)
+        print("pi : \n",pi)
         # tau = approximate_tau(tau, X, pi, priors)
         # tau = tau / tau.sum(axis=1, keepdims=True)
         # print("tau")
@@ -195,6 +196,18 @@ def main(X, n_clusters, max_iter):
         current_iter += 1
     return priors, pi
 
+def main_with_tau(X, tau, n_clusters, max_iter):
+    current_iter = 0
+    while current_iter < max_iter:
+        priors, pi = return_priors_pi(X, tau)
+        tau = approximate_tau_step_by_step(tau, X, pi, priors)
+        print("pi : \n",pi)
+        # tau = approximate_tau(tau, X, pi, priors)
+        # tau = tau / tau.sum(axis=1, keepdims=True)
+        # print("tau")
+        # print(tau)
+        current_iter += 1
+    return priors, pi
 
 def get_X_from_graph(graph):
     n_nodes = len(graph.nodes)

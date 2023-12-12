@@ -189,6 +189,16 @@ def approximate_tau_step_by_step(tau, X, pi, priors, eps = 1e-04, max_iter = 50)
 
     return tau
 
+def polarize_tau(tau, pi, thereshold = 1e-04):
+    n_clusters = pi.shape[0]
+    n_nodes = tau.shape[0]
+    # for l in range(n_clusters):
+    #     for q in range(n_nodes):
+    #         if pi[l,q] > 1 - thereshold:
+    #             for i in range(n_nodes):
+    #                 if tau[i, q] < thereshold:
+                        
+
 def fixed_function(old_tau, X, pi, priors):
     n_nodes, n_clusters = old_tau.shape
     new_tau = np.zeros_like(old_tau)

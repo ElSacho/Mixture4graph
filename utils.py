@@ -13,3 +13,29 @@ def show_graph(G, with_labels=True, node_size = 300, font_size=10):
 
     # Affichez le graphe
     plt.show()
+    
+def show_multiple_graph(list_G, list_titles=None, with_labels=True, node_size=300, font_size=10):
+    n = len(list_G)  # Nombre de graphes dans la liste
+    if n == 0:
+        return  # Pas de graphes à afficher
+    if list_titles == None:
+        list_titles = [f"The graph number {i}" for i in range(len(list_G))] 
+    # Assurez-vous que la liste des titres a la même longueur que la liste des graphes
+    if len(list_titles) != n:
+        raise ValueError("La longueur de list_titles doit être égale à celle de list_G")
+    
+    # Créez une grille de sous-figures alignées horizontalement
+    fig, axes = plt.subplots(nrows=1, ncols=n, figsize=(n*4, 4))
+
+    # Pour chaque graphe dans la liste
+    for k, G in enumerate(list_G):
+        ax = axes[k] if n > 1 else axes  # Gérer le cas où n == 1
+        pos = nx.spring_layout(G)  # Position des nœuds
+
+        # Dessinez le graphe dans la sous-figure correspondante
+        nx.draw(G, pos, ax=ax, with_labels=with_labels, node_size=node_size, node_color='skyblue', font_size=font_size)
+
+        # Ajoutez le titre à la sous-figure
+        ax.set_title(list_titles[k])
+
+    plt.show()

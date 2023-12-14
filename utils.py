@@ -3,13 +3,17 @@ import networkx as nx
 import matplotlib.pyplot as plt
 # import random
 
-def plot_JRX(jrx):
+def plot_JRX(jrx, n_clusters = None):
     # Créer une liste d'indices pour l'axe des x
     # indices = list(range(len(jrx)))
-
+    if n_clusters == None:
+        title = r'The $\mathcal{J}(R_{\mathcal{X}})$  values'
+    else :
+        title = r'The $\mathcal{J}(R_{\mathcal{X}})$ values for ' + str(n_clusters) + ' clusters'
+        
     # Tracer le graphique en fonction des indices
     plt.plot(jrx)
-
+    plt.title(title)
     # Ajouter des étiquettes aux axes
     plt.xlabel('Iterations')
     plt.ylabel(r'$\mathcal{J}(R_{\mathcal{X}})$')

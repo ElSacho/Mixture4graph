@@ -114,13 +114,22 @@ def J_R_x(graph_edges, tau, pi, priors):
     
     J_R_x = 0
     
-    tau_log_priors = np.where(priors == 0, 0, tau * np.log(priors))
+    # tau_log_priors = np.where(priors == 0, 0, tau * np.log(priors))
+    # tau_log_priors = np.zeros_like(tau)
+    non_zero_indices = priors != 0
+    log_priors = np.zeros_like(priors)
+    log_priors[non_zero_indices] = np.log(priors[non_zero_indices])
+    tau_log_priors = tau * log_priors
+
     sum_tau_log_priors = np.sum(tau_log_priors, axis=(0, 1))
     
     J_R_x += sum_tau_log_priors
     
     exp_term = (pi ** graph_edges[:, :, np.newaxis, np.newaxis]) * ((1 - pi) ** (1 - graph_edges[:, :, np.newaxis, np.newaxis]))
-    exp_term = np.where(exp_term == 0, 0, np.log(exp_term)) 
+    exp_term_temp = np.zeros_like(exp_term)
+    non_zero_indices = exp_term != 0
+    exp_term[non_zero_indices] = np.log(exp_term[non_zero_indices])
+    # exp_term = np.where(exp_term == 0, 0, np.log(exp_term)) 
     tau_replicated = np.repeat(tau[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
     theta = tau_replicated * tau_replicated.transpose((1, 0, 3, 2))
     tau_tau_log_b = theta * exp_term
@@ -130,7 +139,10 @@ def J_R_x(graph_edges, tau, pi, priors):
     
     J_R_x += sum_tau_tau_log_b
     
-    tau_log_tau = np.where(tau == 0, 0, tau * np.log(tau))
+    # tau_log_tau = np.where(tau == 0, 0, tau * np.log(tau))
+    tau_log_tau = np.zeros_like(tau)
+    non_zero_indices = tau != 0
+    tau_log_tau[non_zero_indices] = tau[non_zero_indices] * np.log(tau[non_zero_indices])
     sum_tau_log_tau = np.sum(tau_log_tau, axis=(0,1))
     
     J_R_x += sum_tau_log_tau
@@ -178,7 +190,14 @@ def ICL(graph_edges, tau, pi, priors):
     icl += m_Q
     
     return icl
-  
+ 
+def from_tau_to_Z(tau):
+    max_values = np.max(tau, axis=1, keepdims=True)
+    mask = (tau == max_values)
+    z = np.zeros_like(tau)
+    z[mask] = 1
+    return z
+   
 def main(X, n_clusters, max_iter = 100, method = "spectral"):
     n_nodes, _ = X.shape
 
@@ -212,6 +231,7 @@ def main(X, n_clusters, max_iter = 100, method = "spectral"):
     return priors, pi, tau, tab_jrx
 
 def get_X_from_graph(graph):
+    return nx.to_numpy_array(graph)
     n_nodes = len(graph.nodes)
     graph_edges = np.zeros((n_nodes, n_nodes), dtype=int)
     for i, j in graph.edges:
@@ -219,7 +239,6 @@ def get_X_from_graph(graph):
         graph_edges[j, i] = 1
         
     return graph_edges
-
 
 class mixtureModel():
     def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral'):
@@ -239,17 +258,36 @@ class mixtureModel():
         result = {'pi': pi, 'tau' : tau, 'jrx' : tab_jrx, 'priors' : priors, 'ICL' : ICL_clusters, 'max_iter' : max_iter, 'initialisation' : initilisation_method, 'n_clusters' : n_clusters}
         self.results[n_clusters] = result
         
-    def fit_tab_clusters(self, tab_n_clusters, max_iter = None, initilisation_method = None):
+    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None):
         if max_iter == None:
             max_iter = self.max_iter
         if initilisation_method == None:
             initilisation_method = self.initilisation_method
-        for n_clusters in tab_n_clusters:
+        if n_clusters == None:
+            for n_cluster in tab_n_clusters:
+                self.EM(n_cluster, max_iter, initilisation_method)
+        else :
             self.EM(n_clusters, max_iter, initilisation_method)
             
-    def plot_jrx(self, tab_n_clusters):
+    def plot_jrx_several_plot(self, tab_n_clusters):
         for n_clusters in tab_n_clusters:
-            plot_JRX(self.results[n_clusters]['jrx'])
+            plot_JRX(self.results[n_clusters]['jrx'], n_clusters)
+    
+    def plot_jrx(self):
+        for n_clusters in self.results.keys():
+            # Tracer le graphique en fonction des indices
+            plt.plot(self.results[n_clusters]['jrx'], label=f'{n_clusters} clusters') 
+
+        plt.title(r'$\mathcal{J}(R_{\mathcal{X}})$ values')
+        # Ajouter des étiquettes aux axes
+        plt.xlabel('Iterations')
+        plt.ylabel(r'$\mathcal{J}(R_{\mathcal{X}})$')
+
+        # Ajouter une légende au graphique
+        plt.legend()
+
+        # Afficher le graphique
+        plt.show()
             
     def plot_icl(self):
         tab_clusters = []
@@ -258,4 +296,30 @@ class mixtureModel():
             tab_clusters.append(n_clusters)
             tab_ICL.append(self.results[n_clusters]['ICL'])
         plot_ICL(tab_clusters, tab_ICL)
+    
+    def plot_adjency_matrix(self, n_clusters):
+        # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters
+        z = from_tau_to_Z(self.results[n_clusters]['tau'])
+        cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
+
+        # Permuter la matrice d'adjacence
+        adjacency_matrix = nx.to_numpy_array(self.graph)
+        new_order = np.concatenate([cluster_indices[q] for q in range(n_clusters)])
+        permuted_matrix = adjacency_matrix[np.ix_(new_order, new_order)]
         
+        # Visualisation de la matrice d'adjacence triée
+        plt.figure(figsize=(6, 6))
+        plt.spy(permuted_matrix, markersize=0.5)
+
+        # Ajouter des délimitations entre les clusters
+        current_idx = 0
+        for q in range(n_clusters):
+            cluster_size = len(cluster_indices[q])
+            if cluster_size > 0:
+                current_idx += cluster_size
+                plt.axvline(x=current_idx - 0.5, color='r', linestyle='--')
+                plt.axhline(y=current_idx - 0.5, color='r', linestyle='--')
+
+        plt.title("Matrice d'adjacence avec nœuds regroupés par cluster")
+        plt.show()
+

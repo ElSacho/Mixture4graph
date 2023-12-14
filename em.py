@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+from utils import plot_JRX, plot_ICL
 
 from scipy.sparse.linalg import eigs
 from scipy.sparse import diags, eye 
@@ -136,6 +137,47 @@ def J_R_x(graph_edges, tau, pi, priors):
 
     return J_R_x
 
+def log_likehood(graph_edges, tau, pi, priors):
+    # From tau we create Z
+    max_values = np.max(tau, axis=1, keepdims=True)
+    mask = (tau == max_values)
+    Z = np.zeros_like(tau)
+    Z[mask] = 1
+    
+    log_likehood = 0
+    
+    Z_log_priors = np.where(priors == 0, 0, Z * np.log(priors))
+    sum_Z_log_priors = np.sum(Z_log_priors, axis=(0, 1))
+    
+    log_likehood += sum_Z_log_priors
+    
+    exp_term = (pi ** graph_edges[:, :, np.newaxis, np.newaxis]) * ((1 - pi) ** (1 - graph_edges[:, :, np.newaxis, np.newaxis]))
+    exp_term = np.where(exp_term == 0, 0, np.log(exp_term)) 
+    Z_replicated = np.repeat(Z[:, np.newaxis, :, np.newaxis], graph_edges.shape[0], axis=1)
+    theta = Z_replicated * Z_replicated.transpose((1, 0, 3, 2))
+    Z_Z_log_b = theta * exp_term
+    for i in range(graph_edges.shape[0]):
+        Z_Z_log_b[i, i, :, :] = 0
+    sum_Z_Z_log_b = np.sum(Z_Z_log_b, axis=(0, 1, 2, 3)) / 2
+    
+    log_likehood += sum_Z_Z_log_b
+
+    return log_likehood    
+
+def ICL(graph_edges, tau, pi, priors):
+    icl = 0
+    
+    log_lik = log_likehood(graph_edges, tau, pi, priors)
+    
+    icl += log_lik
+    
+    n_nodes, n_clusters = tau.shape
+    
+    m_Q = -1/4 * (n_clusters + 1) * n_clusters * np.log(n_nodes * (n_nodes- 1 ) / 2) - (n_clusters - 1) / 2 * np.log(n_nodes)
+    
+    icl += m_Q
+    
+    return icl
   
 def main(X, n_clusters, max_iter = 100, method = "spectral"):
     n_nodes, _ = X.shape
@@ -167,7 +209,7 @@ def main(X, n_clusters, max_iter = 100, method = "spectral"):
         tau = new_tau.copy()
 
         current_iter += 1
-    return priors, pi, tab_jrx
+    return priors, pi, tau, tab_jrx
 
 def get_X_from_graph(graph):
     n_nodes = len(graph.nodes)
@@ -177,3 +219,43 @@ def get_X_from_graph(graph):
         graph_edges[j, i] = 1
         
     return graph_edges
+
+
+class mixtureModel():
+    def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral'):
+        self.graph = graph
+        self.graph_edges = get_X_from_graph(graph)
+        self.max_iter = max_iter_EM
+        self.initilisation_method = initilisation_method
+        self.results = {}
+    
+    def EM(self, n_clusters, max_iter = None, initilisation_method = None):
+        if max_iter == None:
+            max_iter = self.max_iter
+        if initilisation_method == None:
+            initilisation_method = self.initilisation_method
+        priors, pi, tau, tab_jrx = main(self.graph_edges, n_clusters, max_iter = max_iter, method = initilisation_method)
+        ICL_clusters = ICL(self.graph_edges, tau, pi, priors)
+        result = {'pi': pi, 'tau' : tau, 'jrx' : tab_jrx, 'priors' : priors, 'ICL' : ICL_clusters, 'max_iter' : max_iter, 'initialisation' : initilisation_method, 'n_clusters' : n_clusters}
+        self.results[n_clusters] = result
+        
+    def fit_tab_clusters(self, tab_n_clusters, max_iter = None, initilisation_method = None):
+        if max_iter == None:
+            max_iter = self.max_iter
+        if initilisation_method == None:
+            initilisation_method = self.initilisation_method
+        for n_clusters in tab_n_clusters:
+            self.EM(n_clusters, max_iter, initilisation_method)
+            
+    def plot_jrx(self, tab_n_clusters):
+        for n_clusters in tab_n_clusters:
+            plot_JRX(self.results[n_clusters]['jrx'])
+            
+    def plot_icl(self):
+        tab_clusters = []
+        tab_ICL = []
+        for n_clusters in self.results.keys():
+            tab_clusters.append(n_clusters)
+            tab_ICL.append(self.results[n_clusters]['ICL'])
+        plot_ICL(tab_clusters, tab_ICL)
+        

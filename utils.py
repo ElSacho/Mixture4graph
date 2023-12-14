@@ -16,6 +16,17 @@ def plot_JRX(jrx):
 
     # Afficher le graphique
     plt.show()
+    
+def plot_ICL(tab_n_clusters, tab_ICL):
+    # Créer le graphique
+    plt.plot(tab_n_clusters, tab_ICL, marker='o', linestyle='-')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('ICL Value')
+    plt.title('ICL with respect to the number of clusters')
+    plt.grid(True)
+
+    # Afficher le graphique
+    plt.show()
 
 def show_graph(G, with_labels=True, node_size = 300, font_size=10):
     # Utilisez l'algorithme de disposition du ressort pour positionner les nœuds

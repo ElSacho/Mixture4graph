@@ -81,8 +81,81 @@ def hierarchical_clustering(G, n_clusters):
         new_distances = np.array(new_distances)
         distance_matrix = np.vstack((distance_matrix, new_distances[:-1]))
         distance_matrix = np.column_stack((distance_matrix, new_distances))
-        tau = np.zeros((n_vertices,n_clusters))
+    tau = np.zeros((n_vertices,n_clusters))
     print('clusters', clusters)
+    for index, sublist in enumerate(clusters):
+        for l in sublist:
+            tau[l, index]=1
+    return tau
+
+def modularity(G, clustering):
+    """
+    G (graph)
+    clustering (list): n_vertices the index corresponds to the vertex, the value to the cluster
+    """
+    
+    
+    modularity=0
+    m=G.number_of_edges()
+    clustering_copy=clustering.copy()
+    for cluster in clustering_copy:
+        degree_sum=0
+
+        #cluster=[str(index) for index in cluster]
+
+
+        sub=G.subgraph(cluster)
+
+        degree_sum = sum([deg for _, deg in sub.degree]) 
+        cluster_nedges=sub.number_of_edges()
+        modularity+=(cluster_nedges)/m - (degree_sum/(2*m))**2
+        
+        
+    
+    return modularity
+
+def all_possible_community_pairs(communities):
+    seen_pairs = set()
+    for index, community in enumerate(communities):
+        for other_community in communities[index+1:]:
+                community_pair = tuple((community, other_community))
+                if community_pair not in seen_pairs:
+                    seen_pairs.add(community_pair)
+                    yield community_pair
+
+def best_modularity_change(G, clusters):
+    deltas_q={}
+    for i, j in all_possible_community_pairs([i for i in range(len(clusters))]):
+        clusters_copy=clusters.copy()
+        new_cluster = clusters_copy[i] + clusters_copy[j]
+        clusters_copy.append(new_cluster)
+        clusters_copy.pop(max(i, j))
+        clusters_copy.pop(min(i, j))
+        delta_q=modularity(G,clusters_copy) - modularity(G, clusters)
+        deltas_q[(i,j)]=delta_q
+    max_value, i, j = max(deltas_q.values()), max(deltas_q, key=lambda k: deltas_q[k])[0], max(deltas_q, key=lambda k: deltas_q[k])[1]
+    print('Max delta', max_value, i, j)
+    return max_value, i, j
+
+    
+
+def modularity_clustering(G,n_clusters):
+    n_vertices=G.number_of_nodes()
+    clusters = [[i] for i in range(n_vertices)]
+    delta_q, i, j = best_modularity_change(G, clusters)
+    
+
+    while len(clusters)>n_clusters:
+        new_cluster = clusters[i] + clusters[j]
+        clusters.append(new_cluster)
+
+        clusters.pop(max(i, j))
+        clusters.pop(min(i, j))
+
+        delta_q, i, j = best_modularity_change(G, clusters)
+ 
+
+    tau = np.zeros((n_vertices,len(clusters)))
     for index, sublist in enumerate(clusters):
         for l in sublist:
             tau[l, index]=1

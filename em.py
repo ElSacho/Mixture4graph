@@ -82,18 +82,10 @@ def hierarchical_clustering(G, n_clusters):
         distance_matrix = np.vstack((distance_matrix, new_distances[:-1]))
         distance_matrix = np.column_stack((distance_matrix, new_distances))
         tau = np.zeros((n_vertices,n_clusters))
-        for l in range(n_vertices):
-            index_l=0
-            for index, sublist in enumerate(clusters):
-                found=False
-                if l in sublist:
-                    index_l=index
-                    found=True
-                if found:
-                    break
-
-            tau[l, clusters[index_l]] = 1
-
+    print('clusters', clusters)
+    for index, sublist in enumerate(clusters):
+        for l in sublist:
+            tau[l, index]=1
     return tau
 
 def return_priors_pi(X, tau):

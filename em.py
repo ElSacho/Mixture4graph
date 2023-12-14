@@ -76,7 +76,6 @@ def return_priors_pi(X, tau):
 
     return prior, pi
 
-
 def appro_tau(tau, graph_edges, pi, priors, eps = 1e-04, max_iter = 50):    
     
     finish = False
@@ -108,7 +107,36 @@ def appro_tau(tau, graph_edges, pi, priors, eps = 1e-04, max_iter = 50):
 
     return tau
 
+def J_R_x(graph_edges, tau, pi, priors):
+    # Create index arrays
+    n_nodes = graph_edges.shape[0]
     
+    J_R_x = 0
+    
+    tau_log_priors = np.where(priors == 0, 0, tau * np.log(priors))
+    sum_tau_log_priors = np.sum(tau_log_priors, axis=(0, 1))
+    
+    J_R_x += sum_tau_log_priors
+    
+    exp_term = (pi ** graph_edges[:, :, np.newaxis, np.newaxis]) * ((1 - pi) ** (1 - graph_edges[:, :, np.newaxis, np.newaxis]))
+    exp_term = np.where(exp_term == 0, 0, np.log(exp_term)) 
+    tau_replicated = np.repeat(tau[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
+    theta = tau_replicated * tau_replicated.transpose((1, 0, 3, 2))
+    tau_tau_log_b = theta * exp_term
+    for i in range(n_nodes):
+        tau_tau_log_b[i, i, :, :] = 0
+    sum_tau_tau_log_b = np.sum(tau_tau_log_b, axis=(0, 1, 2, 3)) / 2
+    
+    J_R_x += sum_tau_tau_log_b
+    
+    tau_log_tau = np.where(tau == 0, 0, tau * np.log(tau))
+    sum_tau_log_tau = np.sum(tau_log_tau, axis=(0,1))
+    
+    J_R_x += sum_tau_log_tau
+
+    return J_R_x
+
+  
 def main(X, n_clusters, max_iter = 100, method = "spectral"):
     n_nodes, _ = X.shape
 
@@ -123,9 +151,12 @@ def main(X, n_clusters, max_iter = 100, method = "spectral"):
  
     finished = False
     current_iter = 0
+    tab_jrx = []
  
     while current_iter < max_iter and not finished:
         priors, pi = return_priors_pi(X, tau.copy())
+        
+        tab_jrx.append(J_R_x(X, tau, pi, priors))
         new_tau = appro_tau(tau.copy(), X, pi.copy(), priors.copy())
         # new_tau = approximate_tau_step_by_step(tau.copy(), X, pi.copy(), priors.copy())
         
@@ -136,7 +167,7 @@ def main(X, n_clusters, max_iter = 100, method = "spectral"):
         tau = new_tau.copy()
 
         current_iter += 1
-    return priors, pi
+    return priors, pi, tab_jrx
 
 def get_X_from_graph(graph):
     n_nodes = len(graph.nodes)

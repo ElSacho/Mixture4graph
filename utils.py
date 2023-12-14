@@ -3,6 +3,19 @@ import networkx as nx
 import matplotlib.pyplot as plt
 # import random
 
+def plot_JRX(jrx):
+    # Créer une liste d'indices pour l'axe des x
+    # indices = list(range(len(jrx)))
+
+    # Tracer le graphique en fonction des indices
+    plt.plot(jrx)
+
+    # Ajouter des étiquettes aux axes
+    plt.xlabel('Iterations')
+    plt.ylabel(r'$\mathcal{J}(R_{\mathcal{X}})$')
+
+    # Afficher le graphique
+    plt.show()
 
 def show_graph(G, with_labels=True, node_size = 300, font_size=10):
     # Utilisez l'algorithme de disposition du ressort pour positionner les nœuds

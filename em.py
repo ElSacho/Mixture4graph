@@ -9,34 +9,7 @@ from scipy.sparse import diags, eye
 from random import randint
 from sklearn.cluster import KMeans
 
-def spectral_clustering(G, k):
-    """
-    :type G : networkX graph
-    :type k : int
-    :rtype : dict -> the algorithm must return a dictionary keyed by node to the cluster to which the node belongs
-    """
-    A = nx.adjacency_matrix(G)
-    diagonals = [1/G.degree[node] for node in G.nodes()]
-    D_inv = diags(diagonals)
-    L = eye(G.number_of_nodes()) - D_inv @ A
-    # L = nx.laplacian_matrix(G).astype('float')
-    
-    # d = k in general but can be equal to other values
-    val , vec_eigs = eigs(L, k, which='SM')
-    val , vec_eigs = eigs(L, k, which='SR')
-    # for i in range(len(val)+1):
-    #     print(val[i].real)
-    kmeans = KMeans(n_clusters=k)
-    # vec_eigs = vec_eigs.real.T
-    
-    clusters = kmeans.fit_predict(vec_eigs.real)
-    i = 0
-    tau = np.zeros((len(diagonals),k))
-    for node in G.nodes():
-        tau[i, clusters[i]] = 1
-        i += 1
-    
-    return tau
+from initialisation_methods import spectral_clustering, hierarchical_clustering
 
 def return_priors_pi(X, tau):
     """
@@ -209,6 +182,8 @@ def main(X, n_clusters, max_iter = 100, method = "spectral"):
     elif method == "random":
         tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
         tau = tau / tau.sum(axis=1, keepdims=True)
+    elif method == "hierarchical":
+        tau = hierarchical_clustering(G, n_clusters)
  
     finished = False
     current_iter = 0

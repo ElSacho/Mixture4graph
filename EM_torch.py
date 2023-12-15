@@ -2,28 +2,25 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import torch
+import pickle
 
 from utils import plot_JRX, plot_ICL
-
-from random import randint
-from sklearn.cluster import KMeans
-
 from initialisation_methods import spectral_clustering, hierarchical_clustering, modularity_clustering
 
-def return_priors_pi(X, tau):
+def return_priors_pi(graph_edges, tau):
     """
     We want to have tau_iq = P(Z_iq = 1 | X)
     We also have Z_iq = proba that the i th nodes belongs to the cluster q
     At fixed tau, we maximize J(R_X) and output prior and pi 
 
     Args:
-        X (np array): np.array of the graph, of size (n_vertices x n_vertices)
-        tau (np.array): last estimation of the tau of size (n_vertices x n_cluster)
+        graph_edges (np array): np.array of the graph, of size (n_vertices, n_vertices)
+        tau (np.array): last estimation of the tau of size (n_vertices, n_cluster)
 
     Returns:
         prior, pi: _description_
     """
-    # Assuming tau and X are PyTorch tensors of appropriate shapes
+    # Assuming tau and graph_edges are PyTorch tensors of appropriate shapes
     n_nodes, n_cluster = tau.shape
 
     # Calculate the prior
@@ -35,13 +32,13 @@ def return_priors_pi(X, tau):
     # tau_replicated = tau.unsqueeze(1).repeat(1, n_nodes, 1, 1)
     # theta = tau_replicated * tau_replicated.permute(1, 0, 3, 2)
 
-    # # Expand X and calculate the nominator
+    # # Expand graph_edges and calculate the nominator
     # X_expanded = X[:, :, None, None]
     # nominator = torch.sum(theta * X_expanded, dim=(0, 1))
     tau_replicated = tau.unsqueeze(1).unsqueeze(-1).repeat(1, n_nodes, 1, 1)
     theta = tau_replicated * tau_replicated.transpose(1, 0).transpose(3, 2)
-    X_expanded = X.unsqueeze(2).unsqueeze(-1)
-    nominator = torch.sum(theta * X_expanded, dim=(0, 1))
+    graph_edges_expanded = graph_edges.unsqueeze(2).unsqueeze(-1)
+    nominator = torch.sum(theta * graph_edges_expanded, dim=(0, 1))
 
     # Calculate the denominator
     denominator = torch.sum(theta, dim=(0, 1))
@@ -59,7 +56,7 @@ def appro_tau(tau, graph_edges, pi, priors, eps = 1e-04, max_iter = 50):
     current_iter = 0
 
     while not finish and current_iter < max_iter:
-        old_tau = tau.clone()
+        old_tau = tau
         # Create index arrays
         exp_term = (pi ** graph_edges[:, :, None, None]) * ((1 - pi) ** (1 - graph_edges[:, :, None, None]))
         K = exp_term ** old_tau[None, :, None, :]
@@ -122,10 +119,11 @@ def J_R_x(graph_edges, tau, pi, priors):
     
     J_R_x += sum_tau_log_tau
 
-    return J_R_x
+    return J_R_x.item()
 
 def log_likehood(graph_edges, tau, pi, priors):
     # From tau we create Z
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     n_nodes = graph_edges.shape[0]
     
     z = from_tau_to_Z(tau)
@@ -133,7 +131,7 @@ def log_likehood(graph_edges, tau, pi, priors):
     log_likehood = 0
     
     non_zero_indices = priors != 0
-    log_priors = torch.zeros_like(priors)
+    log_priors = torch.zeros_like(priors).to(device)
     log_priors[non_zero_indices] = torch.log(priors[non_zero_indices])
     z_log_priors = z * log_priors
     sum_z_log_priors = torch.sum(z_log_priors, dim=(0, 1))
@@ -142,7 +140,7 @@ def log_likehood(graph_edges, tau, pi, priors):
     
     exp_term = (pi ** graph_edges[:, :, None, None]) * ((1 - pi) ** (1 - graph_edges[:, :, None, None]))
     non_zero_indices = exp_term != 0
-    exp_term_log = torch.zeros_like(exp_term)
+    exp_term_log = torch.zeros_like(exp_term).to(device)
     exp_term_log[non_zero_indices] = torch.log(exp_term[non_zero_indices])
     z_replicated = z.unsqueeze(1).unsqueeze(-1).repeat(1, n_nodes, 1, 1)
     theta = z_replicated * z_replicated.transpose(1, 0).transpose(3, 2)
@@ -153,7 +151,7 @@ def log_likehood(graph_edges, tau, pi, priors):
     
     log_likehood += sum_z_z_log_b
 
-    return log_likehood    
+    return log_likehood.item()
 
 def ICL(graph_edges, tau, pi, priors):
     icl = 0
@@ -177,10 +175,10 @@ def from_tau_to_Z(tau):
     z[mask] = 1
     return z
    
-def main(X, n_clusters, max_iter = 100, method = "spectral"):
-    n_nodes, _ = X.shape
+def main(graph_edges, n_clusters, max_iter = 100, method = "spectral"):
+    n_nodes, _ = graph_edges.shape
 
-    G = nx.from_numpy_array(X)
+    G = nx.from_numpy_array(graph_edges.to('cpu').numpy())
     
     # Initialize tau 
     if method == "spectral":
@@ -202,25 +200,28 @@ def main(X, n_clusters, max_iter = 100, method = "spectral"):
 
     # Move 'tau' and 'X' tensors to the target device
     tau = torch.from_numpy(tau).to(device)
-    X = torch.from_numpy(X).to(device)
+    graph_edges = torch.Tensor(graph_edges).to(device)
  
     while current_iter < max_iter and not finished:
-        priors, pi = return_priors_pi(X, tau.clone())
+        priors, pi = return_priors_pi(graph_edges, tau)
         
-        tab_jrx.append(J_R_x(X, tau, pi, priors))
-        new_tau = appro_tau(tau.clone(), X, pi.clone(), priors.clone())
+        tab_jrx.append(J_R_x(graph_edges, tau, pi, priors))
+        new_tau = appro_tau(tau, graph_edges, pi, priors)
         # new_tau = approximate_tau_step_by_step(tau.copy(), X, pi.copy(), priors.copy())
         
         if torch.any(torch.isnan(new_tau)):
             break
     
-        tau = new_tau.clone()
+        tau = new_tau
 
         current_iter += 1
     return priors, pi, tau, tab_jrx
 
 def get_X_from_graph(graph):
-    return nx.to_numpy_array(graph)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    graph_edges = nx.to_numpy_array(graph)
+    graph_edges_tensor = torch.Tensor(graph_edges).to(device)
+    return graph_edges_tensor
     n_nodes = len(graph.nodes)
     graph_edges = np.zeros((n_nodes, n_nodes), dtype=int)
     for i, j in graph.edges:
@@ -231,6 +232,7 @@ def get_X_from_graph(graph):
 
 class mixtureModel():
     def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral'):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.graph = graph
         self.graph_edges = get_X_from_graph(graph)
         self.max_iter = max_iter_EM
@@ -244,10 +246,10 @@ class mixtureModel():
             initilisation_method = self.initilisation_method
         priors, pi, tau, tab_jrx = main(self.graph_edges, n_clusters, max_iter = max_iter, method = initilisation_method)
         ICL_clusters = ICL(self.graph_edges, tau, pi, priors)
-        result = {'pi': pi.numpy(), 'tau' : tau.numpy(), 'jrx' : tab_jrx, 'priors' : priors.numpy(), 'ICL' : ICL_clusters, 'max_iter' : max_iter, 'initialisation' : initilisation_method, 'n_clusters' : n_clusters}
+        result = {'pi': pi.to('cpu').numpy(), 'tau' : tau.to('cpu').numpy(), 'jrx' : tab_jrx, 'priors' : priors.to('cpu').numpy(), 'ICL' : ICL_clusters, 'max_iter' : max_iter, 'initialisation' : initilisation_method, 'n_clusters' : n_clusters}
         self.results[n_clusters] = result
         
-    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None):
+    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None, save_path = "save_results.pkl"):
         if max_iter == None:
             max_iter = self.max_iter
         if initilisation_method == None:
@@ -258,6 +260,8 @@ class mixtureModel():
                 print('Fit finished for ', n_cluster, ' clusters ')
         else :
             self.EM(n_clusters, max_iter, initilisation_method)
+        with open(save_path+'.pkl', 'wb') as f:
+            pickle.dump(self.results, f)
             
     def plot_jrx_several_plot(self, tab_n_clusters):
         for n_clusters in tab_n_clusters:
@@ -277,9 +281,12 @@ class mixtureModel():
         plt.legend()
 
         # Afficher le graphique
-        plt.show()
+        
         if save_path != None:
             plt.savefig(f'{save_path}.png')
+            plt.close()
+        else : 
+            plt.show()
             
     def plot_icl(self, save_path = None):
         tab_clusters = []
@@ -289,9 +296,9 @@ class mixtureModel():
             tab_ICL.append(self.results[n_clusters]['ICL'])
         plot_ICL(tab_clusters, tab_ICL, save_path)
     
-    def plot_adjency_matrix(self, n_clusters):
+    def plot_adjency_matrix(self, n_clusters, save_path = None):
         # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters
-        z = from_tau_to_Z(self.results[n_clusters]['tau']).numpy()
+        z = from_tau_to_Z(torch.from_numpy(self.results[n_clusters]['tau']))
         cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
 
         # Permuter la matrice d'adjacence
@@ -313,5 +320,21 @@ class mixtureModel():
                 plt.axhline(y=current_idx - 0.5, color='r', linestyle='--')
 
         plt.title("Matrice d'adjacence avec nœuds regroupés par cluster")
-        plt.show()
+        if save_path != None:
+            plt.savefig(f'{save_path}.png')
+            plt.close()
+        else : 
+            plt.show()
+            
+    def plot_all_adjency_matrices(self, save_path = None):
+        for n_clusters in self.results.keys():
+            if save_path != None:
+                self.plot_adjency_matrix(n_clusters, save_path + "_"+ str(n_clusters)+"_clusters")
+            else:
+                self.plot_adjency_matrix(n_clusters, save_path = None)
+        
+    def load_results(self, results_path):
+        with open(results_path, 'rb') as f:
+            self.results = pickle.load(f)
+        
 

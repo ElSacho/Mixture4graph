@@ -9,7 +9,7 @@ from scipy.sparse import diags, eye
 from random import randint
 from sklearn.cluster import KMeans
 
-from initialisation_methods import spectral_clustering, hierarchical_clustering
+from initialisation_methods import spectral_clustering, hierarchical_clustering, modularity_clustering
 
 def return_priors_pi(X, tau):
     """
@@ -32,9 +32,6 @@ def return_priors_pi(X, tau):
     # and X is a 2D numpy array of shape (n_nodes, n_nodes)
     
     # Calculate the nominator
-    # tau[:, :, np.newaxis] shape is (n_nodes, n_cluster, 1)
-    # tau[:, np.newaxis, :] shape is (n_nodes, 1, n_cluster)
-    # This operation results in a shape of (n_nodes, n_cluster, n_cluster)
     tau_replicated = np.repeat(tau[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
     theta = tau_replicated * tau_replicated.transpose((1, 0, 3, 2))
     X_expanded = X[:, :, np.newaxis, np.newaxis]
@@ -184,7 +181,9 @@ def main(X, n_clusters, max_iter = 100, method = "spectral"):
         tau = tau / tau.sum(axis=1, keepdims=True)
     elif method == "hierarchical":
         tau = hierarchical_clustering(G, n_clusters)
- 
+    elif method == 'modularity':
+        tau = modularity_clustering(G, n_clusters)
+        
     finished = False
     current_iter = 0
     tab_jrx = []

@@ -3,8 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from utils import plot_JRX, plot_ICL
-from scipy.sparse import csr_matrix
-import scipy.sparse as sp
+
 
 from scipy.sparse.linalg import eigs
 from scipy.sparse import diags, eye 

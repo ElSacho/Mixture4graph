@@ -1,13 +1,10 @@
 import numpy as np 
 import networkx as nx
 import matplotlib.pyplot as plt
+import torch
 
 from utils import plot_JRX, plot_ICL
 
-import torch
-
-from scipy.sparse.linalg import eigs
-from scipy.sparse import diags, eye 
 from random import randint
 from sklearn.cluster import KMeans
 
@@ -50,7 +47,9 @@ def return_priors_pi(X, tau):
     denominator = torch.sum(theta, dim=(0, 1))
 
     # Calculate pi with safe division # WE NEED TO ADD THE CASE WHERE DENOM == 0
-    pi = torch.div(nominator, denominator, out=torch.zeros_like(nominator))
+    pi = torch.div(nominator, denominator + torch.finfo(torch.float64).eps, out=torch.zeros_like(nominator))
+    zero_indices = denominator == 0
+    pi[zero_indices] = 0
 
     return prior, pi
 
@@ -256,6 +255,7 @@ class mixtureModel():
         if n_clusters == None:
             for n_cluster in tab_n_clusters:
                 self.EM(n_cluster, max_iter, initilisation_method)
+                print('Fit finished for ', n_cluster, ' clusters ')
         else :
             self.EM(n_clusters, max_iter, initilisation_method)
             

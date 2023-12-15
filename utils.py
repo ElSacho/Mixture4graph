@@ -80,3 +80,46 @@ def show_graph_cluster_color(graph, tau): # Déterminer des couleurs uniques pou
     # Dessiner le graphe
     nx.draw(graph, node_color=node_colors, with_labels=True, node_size=30, width = 0.1)
     plt.show()
+
+def from_tau_to_Z(tau):
+    max_values = np.max(tau, axis=1, keepdims=True)
+    mask = (tau == max_values)
+    z = np.zeros_like(tau)
+    z[mask] = 1
+    return z
+
+def plot_adjency_matrix(graph, tau, n_clusters):
+    # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters
+    z = from_tau_to_Z(tau)
+    cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
+    names_index=[(index, name) for index, name in enumerate(graph.nodes())]
+
+    # Permuter la matrice d'adjacence
+    adjacency_matrix = nx.to_numpy_array(graph)
+    new_order = np.concatenate([cluster_indices[q] for q in range(n_clusters)])
+    index_to_name = dict(names_index)
+
+    # Reorder the list of the names of the nodes based on new_order
+    reordered_list = [(index, index_to_name[index]) for index in new_order]
+    permuted_matrix = adjacency_matrix[np.ix_(new_order, new_order)]
+    
+    # Visualisation de la matrice d'adjacence triée
+    plt.figure(figsize=(6, 6))
+    plt.spy(permuted_matrix, markersize=0.5)
+
+    labels = [index_to_name[index] for index in new_order]
+    plt.xticks(ticks=np.arange(len(labels)), labels=labels, rotation=90, fontsize=6)  # Rotate for better legibility
+    plt.yticks(ticks=np.arange(len(labels)), labels=labels, fontsize=6)
+
+
+    # Ajouter des délimitations entre les clusters
+    current_idx = 0
+    for q in range(n_clusters):
+        cluster_size = len(cluster_indices[q])
+        if cluster_size > 0:
+            current_idx += cluster_size
+            plt.axvline(x=current_idx - 0.5, color='r', linestyle='--')
+            plt.axhline(y=current_idx - 0.5, color='r', linestyle='--')
+
+    plt.title("Matrice d'adjacence avec nœuds regroupés par cluster")
+    plt.show()

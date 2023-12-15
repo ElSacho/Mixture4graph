@@ -219,6 +219,7 @@ def get_X_from_graph(graph):
 class mixtureModel():
     def __init__(self, gml, max_iter_EM = 50, initilisation_method = 'spectral'):
         self.graph = gml.data
+        self.names_index=gml.names_index
         self.graph_edges = get_X_from_graph(gml.data)
         self.max_iter = max_iter_EM
         self.initilisation_method = initilisation_method
@@ -285,11 +286,20 @@ class mixtureModel():
         # Permuter la matrice d'adjacence
         adjacency_matrix = nx.to_numpy_array(self.graph)
         new_order = np.concatenate([cluster_indices[q] for q in range(n_clusters)])
+        index_to_name = dict(self.names_index)
+
+        # Reorder the list of the names of the nodes based on new_order
+        reordered_list = [(index, index_to_name[index]) for index in new_order]
         permuted_matrix = adjacency_matrix[np.ix_(new_order, new_order)]
         
         # Visualisation de la matrice d'adjacence triée
         plt.figure(figsize=(6, 6))
         plt.spy(permuted_matrix, markersize=0.5)
+
+        labels = [index_to_name[index] for index in new_order]
+        plt.xticks(ticks=np.arange(len(labels)), labels=labels, rotation=90, fontsize=6)  # Rotate for better legibility
+        plt.yticks(ticks=np.arange(len(labels)), labels=labels, fontsize=6)
+
 
         # Ajouter des délimitations entre les clusters
         current_idx = 0

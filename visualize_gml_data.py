@@ -7,6 +7,7 @@ class gml_dataset():
     def __init__(self, datapath) -> None:
         self.datapath=datapath
         self.data=nx.read_gml(datapath)
+        self.names_index=[(index,name) for index, name in enumerate(self.data.nodes())]
 
     def print_general(self):
         n_nodes = self.data.number_of_nodes()
@@ -35,7 +36,7 @@ class gml_dataset():
         
         clustering_coef = nx.transitivity(self.data)
         print("The clustering coefficient of the graph G is : ", clustering_coef)
-        
+
     def show_graph(self, with_labels=True, node_size = 300, font_size=10):
         # Utilisez l'algorithme de disposition du ressort pour positionner les nœuds
         pos = nx.spring_layout(self.data)

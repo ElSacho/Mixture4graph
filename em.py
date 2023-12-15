@@ -134,7 +134,6 @@ def best_modularity_change(G, clusters):
         delta_q=modularity(G,clusters_copy) - modularity(G, clusters)
         deltas_q[(i,j)]=delta_q
     max_value, i, j = max(deltas_q.values()), max(deltas_q, key=lambda k: deltas_q[k])[0], max(deltas_q, key=lambda k: deltas_q[k])[1]
-    print('Max delta', max_value, i, j)
     return max_value, i, j
 
     

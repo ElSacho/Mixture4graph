@@ -35,6 +35,16 @@ class gml_dataset():
         
         clustering_coef = nx.transitivity(self.data)
         print("The clustering coefficient of the graph G is : ", clustering_coef)
+        
+    def show_graph(self, with_labels=True, node_size = 300, font_size=10):
+        # Utilisez l'algorithme de disposition du ressort pour positionner les nœuds
+        pos = nx.spring_layout(self.data)
+
+        # Dessinez le graphe en utilisant les positions calculées
+        nx.draw(self.data, pos, with_labels=with_labels, node_size=node_size, node_color='skyblue', font_size=font_size, width = 0.1)
+
+        # Affichez le graphe
+        plt.show()
     
     def plot_figure_graph(self):
         fig = plt.figure("Degree of the graph", figsize=(8, 4))

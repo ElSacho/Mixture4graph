@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 
-from vizualize_data import dataset
+from vizualize_data import data_visualisation
 
 from EM_torch import mixtureModel
 
@@ -14,13 +14,14 @@ print("Name of the experiment results files : " , end="")
 save_name = input()
 print("Working on it")
 
-data = dataset("data/congress_network/congress_new_edgelist.txt")
+graph = nx.read_gml("data/lesmis/lesmis.gml")
+data_visualisation = data_visualisation(graph)
 
-data.print_generalitize()
-data.plot_figure_graph()
+data_visualisation.print_generalitize()
+data_visualisation.plot_figure_graph()
 
-model = mixtureModel(data.get_connected_component(), initilisation_method="random")
-tab_clusters = range(2, 15)
+model = mixtureModel(graph, initilisation_method="random")
+tab_clusters = range(2, 26)
 
 
 model.fit(tab_clusters, save_path=os.path.join("results",'results_'+save_name))

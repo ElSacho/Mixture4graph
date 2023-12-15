@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 
-class dataset():
+class data_visualisation():
     def __init__(self, graph):
         self.graph = graph
         
@@ -12,6 +12,8 @@ class dataset():
     def print_generalitize(self):
         n_nodes = self.graph.number_of_nodes()
         n_edges = self.graph.number_of_edges()
+
+        print('The graph has ',n_nodes, 'nodes, and ', n_edges, ' edges')  
         print("The graph has ", nx.number_connected_components(self.graph)," connected components.")
         largest_cc = max(nx.connected_components(self.graph), key=len)
 

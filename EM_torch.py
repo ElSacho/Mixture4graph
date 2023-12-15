@@ -336,9 +336,9 @@ class mixtureModel():
     def plot_all_adjency_matrices(self, save_path = None, show_names = False):
         for n_clusters in self.results.keys():
             if save_path != None:
-                self.plot_adjency_matrix(n_clusters, save_path + "_"+ str(n_clusters)+"_clusters")
+                self.plot_adjency_matrix(n_clusters, save_path + "_"+ str(n_clusters)+"_clusters", show_names = show_names)
             else:
-                self.plot_adjency_matrix(n_clusters, save_path = None)
+                self.plot_adjency_matrix(n_clusters, save_path = None, show_names = show_names)
         
     def load_results(self, results_path):
         with open(results_path, 'rb') as f:

@@ -296,11 +296,11 @@ class mixtureModel():
             tab_ICL.append(self.results[n_clusters]['ICL'])
         plot_ICL(tab_clusters, tab_ICL, save_path)
     
-    def plot_adjency_matrix(self, n_clusters, save_path = None):
+    def plot_adjency_matrix(self, n_clusters, save_path = None, show_names = False):
         # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters
         z = from_tau_to_Z(torch.from_numpy(self.results[n_clusters]['tau']))
         cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
-
+        
         # Permuter la matrice d'adjacence
         adjacency_matrix = nx.to_numpy_array(self.graph)
         new_order = np.concatenate([cluster_indices[q] for q in range(n_clusters)])
@@ -309,6 +309,13 @@ class mixtureModel():
         # Visualisation de la matrice d'adjacence triée
         plt.figure(figsize=(6, 6))
         plt.spy(permuted_matrix, markersize=0.5)
+        
+        if show_names:
+            names_index = [(index, name) for index, name in enumerate(self.graph.nodes())]
+            index_to_name = dict(names_index)
+            labels = [index_to_name[index] for index in new_order]
+            plt.xticks(ticks=np.arange(len(labels)), labels=labels, rotation=90, fontsize=6)  # Rotate for better legibility
+            plt.yticks(ticks=np.arange(len(labels)), labels=labels, fontsize=6)
 
         # Ajouter des délimitations entre les clusters
         current_idx = 0
@@ -326,7 +333,7 @@ class mixtureModel():
         else : 
             plt.show()
             
-    def plot_all_adjency_matrices(self, save_path = None):
+    def plot_all_adjency_matrices(self, save_path = None, show_names = False):
         for n_clusters in self.results.keys():
             if save_path != None:
                 self.plot_adjency_matrix(n_clusters, save_path + "_"+ str(n_clusters)+"_clusters")
@@ -336,5 +343,14 @@ class mixtureModel():
     def load_results(self, results_path):
         with open(results_path, 'rb') as f:
             self.results = pickle.load(f)
+
+    def get_clusters(self, n_clusters):
+        z = from_tau_to_Z(torch.from_numpy(self.results[n_clusters]['tau']))
+        nodes_index=[(index, node) for index, node in enumerate(self.graph.nodes())]
+        cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
+        clusters={}
+        for q, indices in cluster_indices.items():
+            clusters[q] = [item[1] for item in nodes_index if item[0] in indices] 
+        return clusters
         
 

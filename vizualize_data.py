@@ -5,7 +5,7 @@ import numpy as np
 class dataset():
     def __init__(self, datapath):
         self.datapath = datapath
-        self.G = nx.read_edgelist("data/CA-HepTh.txt")
+        self.G = nx.read_edgelist(datapath)
         
     def get_connected_component(self, ):
         return self.G.subgraph(max(nx.connected_components(self.G), key=len))

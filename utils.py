@@ -124,3 +124,4 @@ def show_graph_cluster_color(graph, tau): # Déterminer des couleurs uniques pou
     # Dessiner le graphe
     nx.draw(graph, node_color=node_colors, with_labels=False, node_size=30, width = 0.1)
     plt.show()
+    

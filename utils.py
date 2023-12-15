@@ -123,3 +123,12 @@ def plot_adjency_matrix(graph, tau, n_clusters):
 
     plt.title("Matrice d'adjacence avec nœuds regroupés par cluster")
     plt.show()
+
+def get_clusters(G, tau, n_clusters):
+    z = from_tau_to_Z(tau)
+    nodes_index=[(index, node) for index, node in enumerate(G.nodes())]
+    cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
+    clusters={}
+    for q, indices in cluster_indices.items():
+        clusters[q] = [item[1] for item in nodes_index if item[0] in indices] 
+    return clusters

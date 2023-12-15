@@ -43,7 +43,7 @@ max_iter = 50
 graph, tau = generate_and_give_tau(n_vertices, pi , priors)
 
 model = mixtureModel(graph, initilisation_method='random')
-tab_clusters = range(2, 20)
+tab_clusters = range(2, 17)
 model.fit(tab_clusters, save_path=os.path.join("results",'results_'+save_name))
 
 model.plot_jrx(save_path=os.path.join("results",'jrx_generate'+save_name))

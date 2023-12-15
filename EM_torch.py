@@ -263,7 +263,7 @@ class mixtureModel():
         for n_clusters in tab_n_clusters:
             plot_JRX(self.results[n_clusters]['jrx'], n_clusters)
     
-    def plot_jrx(self):
+    def plot_jrx(self, save_path = None):
         for n_clusters in self.results.keys():
             # Tracer le graphique en fonction des indices
             plt.plot(self.results[n_clusters]['jrx'], label=f'{n_clusters} clusters') 
@@ -278,14 +278,16 @@ class mixtureModel():
 
         # Afficher le graphique
         plt.show()
+        if save_path != None:
+            plt.savefig(f'{save_path}.png')
             
-    def plot_icl(self):
+    def plot_icl(self, save_path = None):
         tab_clusters = []
         tab_ICL = []
         for n_clusters in self.results.keys():
             tab_clusters.append(n_clusters)
             tab_ICL.append(self.results[n_clusters]['ICL'])
-        plot_ICL(tab_clusters, tab_ICL)
+        plot_ICL(tab_clusters, tab_ICL, save_path)
     
     def plot_adjency_matrix(self, n_clusters):
         # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters

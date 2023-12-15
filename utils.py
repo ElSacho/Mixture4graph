@@ -21,7 +21,7 @@ def plot_JRX(jrx, n_clusters = None):
     # Afficher le graphique
     plt.show()
     
-def plot_ICL(tab_n_clusters, tab_ICL):
+def plot_ICL(tab_n_clusters, tab_ICL, save_path = None):
     # Créer le graphique
     plt.plot(tab_n_clusters, tab_ICL, marker='o', linestyle='-')
     plt.xlabel('Number of clusters')
@@ -31,6 +31,8 @@ def plot_ICL(tab_n_clusters, tab_ICL):
 
     # Afficher le graphique
     plt.show()
+    if save_path != None:
+        plt.savefig(f'{save_path}.png')
 
 def show_graph(G, with_labels=True, node_size = 300, font_size=10):
     # Utilisez l'algorithme de disposition du ressort pour positionner les nœuds

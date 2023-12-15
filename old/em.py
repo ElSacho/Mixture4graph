@@ -2,8 +2,14 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+from utils import plot_JRX, plot_ICL
 
+from scipy.sparse.linalg import eigs
+from scipy.sparse import diags, eye 
+from random import randint
+from sklearn.cluster import KMeans
 
+from initialisation_methods import spectral_clustering, hierarchical_clustering, modularity_clustering
 
 def return_priors_pi(X, tau):
     """
@@ -22,198 +28,184 @@ def return_priors_pi(X, tau):
     
     prior = np.mean(tau, axis = 0)
     
-    pi = np.zeros((n_cluster, n_cluster))
-    for q in range(n_cluster):
-        for l in range(n_cluster):
-            denominator = 0
-            nominator = 0
-            for i in range(n_nodes):
-                for j in range(n_nodes):
-                    if j != i:
-                       nominator += tau[i,q] * tau[j,l] * X[i,j]
-                       denominator += tau[i,q] * tau[j,l]
-            pi[q,l] = nominator/denominator
-            pi[l,q] = nominator/denominator
+    # Assumption: tau is a 2D numpy array of shape (n_nodes, n_cluster)
+    # and X is a 2D numpy array of shape (n_nodes, n_nodes)
     
-    # pi = np.zeros((n_cluster, n_cluster))
-    # for q in range(n_cluster):
-    #     for l in range(q, n_cluster):
-    #         denominator = 0
-    #         nominator = 0
-    #         for i in range(n_nodes):
-    #             for j in range(n_nodes):
-    #                 if j != i:
-    #                    nominator += tau[i,q] * tau[j,l] * X[i,j]
-    #                    denominator += tau[i,q] * tau[j,l]
-    #         pi[q,l] = nominator/denominator
-    #         pi[l,q] = nominator/denominator
-    
+    # Calculate the nominator
+    tau_replicated = np.repeat(tau[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
+    theta = tau_replicated * tau_replicated.transpose((1, 0, 3, 2))
+    X_expanded = X[:, :, np.newaxis, np.newaxis]
+    nominator = np.sum(theta * X_expanded, axis=(0, 1))
+
+    # Calculate the denominator
+    # The shape of the denominator is (n_cluster, n_cluster)
+    denominator = np.sum(theta, axis=(0, 1))
+
+    # Calculate pi avoiding division by zero
+    # Where denominator is zero, we set pi to zero 
+    pi = np.divide(nominator, denominator, out=np.zeros_like(nominator), where=denominator != 0)
+
     return prior, pi
 
-
-def b_pow(X_ij, pi_ql, tau_jl):
-    """
-    Let us discuss when b=0
-    if b = 0 
-        pi_ql = 0
-            then one node between the cluster q and the cluster l cannot be connected
-            then if i and j simultaneously have nothing to do with this cluster : there is no link and it can be equal to zero
-            if i is in cluster q and j in cluster l then X_ij = 0 so pi_ql**X_ij = 0
-        if pi_ql = 1
-            then one node between the cluster q and the cluster l have to be connected
-            then if i and j simultaneously have nothing to do with this cluster : there is no link and it can be equal to zero
-            if i is in cluster q and j in cluster l then X_ij = 1 so (1 - pi_ql)**(1-X_ij) = 0
-        
-    Args:
-        X_ij (int): 1 if there is an edge between i and j; 0 otherwise
-        pi_ql (_type_): probability that one node in cluster q is connected to one node of cluster l
-
-    Returns:
-        b : the likehood of the observation
-    """
+def appro_tau(tau, graph_edges, pi, priors, eps = 1e-04, max_iter = 50):    
     
-    b = (pi_ql**X_ij)**tau_jl * ((1-pi_ql)**(1-X_ij)) ** tau_jl
-    return b
-
-
-def fixed_function_i(old_tau, old_new_tau_i, X, pi, priors, i):
-    n_nodes, n_clusters = old_tau.shape
-    new_tau_i = np.zeros(n_clusters)
-    
-    s = 0
-    for q in range(n_clusters):
-        val_iq = 1
-        for j in range(n_nodes):
-            for l in range(n_clusters):
-                if j != i :
-                    b = b_pow(X[i,j], pi[q,l], old_tau[j,l])
-                    if b == 0:
-                        # val_iq *= b
-                        continue
-                        # print("X : ", X[i,j], 'for (i,j) = ', i,j)
-                        # print("pi[q,l] : ", pi[q,l], 'for (q,l) = ', q,l)
-                        # print("tau ; ", old_tau[j,l])
-                        # or we store those indexes and then we will change the values
-                        # new_tau[i,q] = 0
-                        # new_tau[i,l] = 0
-                        # new_tau[j,q] = 0
-                        # new_tau[j,l] = 0
-                    else:
-                        val_iq *= b
-        new_tau_i[q] = priors[q] * val_iq
-        s += new_tau_i[q]
-        # print(new_tau[i,q])
-    new_tau_i = new_tau_i / s
-    return new_tau_i
-
-
-def approximate_tau_step_by_step(old_tau, X, pi, priors, eps = 1e-04, max_iter = 50):
-    
-    # old_tau = np.random.uniform(0, 1, size=(X.shape[0], pi.shape[0]))
-    # old_tau = old_tau / old_tau.sum(axis=1, keepdims=True)
-    new_tau = np.zeros_like(old_tau)
-
-    for i in range(X.shape[0]):
-        current_iter = 0
-        # old_new_tau_i = np.random.uniform(0, 1, size=(pi.shape[0]))
-        old_new_tau_i = old_tau[i].copy()
-        while current_iter < max_iter:
-            new_tau_i = fixed_function_i(old_tau, old_new_tau_i, X, pi, priors, i)
-            print("new tau i : ", i)
-            print(new_tau_i)
-            print("n_iter for the position ", i, ": ", current_iter)
-            difference_matrix = np.abs(new_tau_i - old_new_tau_i)
-            if np.all(difference_matrix < eps):
-                break    
-            current_iter += 1
-            old_new_tau_i = new_tau_i.copy()
-        new_tau[i,:] = new_tau_i.copy()
-            
-    
-    return new_tau
-
-def fixed_function(old_tau, X, pi, priors):
-    n_nodes, n_clusters = old_tau.shape
-    new_tau = np.zeros_like(old_tau)
-    
-    for i in range(n_nodes):
-        for q in range(n_clusters):
-            val_iq = 1
-            for j in range(n_nodes):
-                for l in range(n_clusters):
-                    if j != i :
-                        b = b_pow(X[i,j], pi[q,l], old_tau[j,l])
-                        if b == 0:
-                            continue
-                            # print("X : ", X[i,j], 'for (i,j) = ', i,j)
-                            # print("pi[q,l] : ", pi[q,l], 'for (q,l) = ', q,l)
-                            # print("tau ; ", old_tau[j,l])
-                            # or we store those indexes and then we will change the values
-                            # new_tau[i,q] = 0
-                            # new_tau[i,l] = 0
-                            # new_tau[j,q] = 0
-                            # new_tau[j,l] = 0
-                        else:
-                            val_iq *= b
-            new_tau[i, q] = priors[q] * val_iq
-            # print(new_tau[i,q])
-    
-    return new_tau
-    
-def approximate_tau(old_tau, X, pi, priors, eps = 1e-04, max_iter = 50):
-    
-    old_tau = np.random.uniform(0, 1, size=(X.shape[0], pi.shape[0]))
-    old_tau = old_tau / old_tau.sum(axis=1, keepdims=True)
+    finish = False
     current_iter = 0
-    
-    while current_iter < max_iter:
-        # print("old tau : ")
-        # print(old_tau)
-        new_tau = fixed_function(old_tau, X, pi, priors)
-        # print("new_tau after funtion :")
-        # print(new_tau)
-        # print(" ")
-        # new_tau = new_tau / new_tau.sum(axis=1, keepdims=True)
+
+    while not finish and current_iter < max_iter:
         
-        difference_matrix = np.abs(new_tau - old_tau)
+        old_tau = tau.copy()
+        # Create index arrays
+        exp_term = (pi ** graph_edges[:, :, np.newaxis, np.newaxis]) * ((1 - pi) ** (1 - graph_edges[:, :, np.newaxis, np.newaxis]))
+        K = exp_term ** old_tau[np.newaxis, :, np.newaxis, :] 
+
+        K = np.prod(K, axis=3)
+        for i in range(K.shape[0]):
+            K[i, i, :] = 1
+
+        tau = np.prod(K, axis=1)
+        tau = tau * priors
+
+        # Reshape new_tau if necessary to match the original tau shape
+        tau = tau.reshape(old_tau.shape)
+        
+        tau = tau / tau.sum(axis=1, keepdims=True)
+        
+        difference_matrix = np.abs(tau - old_tau)
         if np.all(difference_matrix < eps):
-            break
-        # print("In the fixed function, the appriximation for tau is at : ", np.mean(difference_matrix))
-        old_tau = new_tau.copy()
-        
+            finish = True    
         current_iter += 1
-    print("")
-    # print("tau :")
-    # print(new_tau)
-    print("n_iter : ", current_iter)
-    return new_tau
-    
-def main(X, n_clusters, max_iter):
-    n_nodes, _ = X.shape
-    # pi = np.random.uniform(0, 1, size=(n_clusters, n_clusters))
-    # pi = (pi + pi.T) / 2
-    
-    # priors = np.random.uniform(0, 1, size=n_clusters)
-    # priors = priors / np.sum(priors)
-    
-    tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
-    tau = tau / tau.sum(axis=1, keepdims=True)
-    # print("tau")
-    # print(tau)
-    
-    current_iter = 0
-    while current_iter < max_iter:
-        priors, pi = return_priors_pi(X, tau)
-        # tau = approximate_tau_step_by_step(tau, X, pi, priors)
-        tau = approximate_tau(tau, X, pi, priors)
-        # tau = tau / tau.sum(axis=1, keepdims=True)
-        # print("tau")
-        # print(tau)
-        current_iter += 1
-    return priors, pi
 
+    return tau
+
+def J_R_x(graph_edges, tau, pi, priors):
+    # Create index arrays
+    n_nodes = graph_edges.shape[0]
+    
+    J_R_x = 0
+    
+    # tau_log_priors = np.where(priors == 0, 0, tau * np.log(priors))
+    # tau_log_priors = np.zeros_like(tau)
+    non_zero_indices = priors != 0
+    log_priors = np.zeros_like(priors)
+    log_priors[non_zero_indices] = np.log(priors[non_zero_indices])
+    tau_log_priors = tau * log_priors
+
+    sum_tau_log_priors = np.sum(tau_log_priors, axis=(0, 1))
+    
+    J_R_x += sum_tau_log_priors
+    
+    exp_term = (pi ** graph_edges[:, :, np.newaxis, np.newaxis]) * ((1 - pi) ** (1 - graph_edges[:, :, np.newaxis, np.newaxis]))
+    exp_term_temp = np.zeros_like(exp_term)
+    non_zero_indices = exp_term != 0
+    exp_term[non_zero_indices] = np.log(exp_term[non_zero_indices])
+    # exp_term = np.where(exp_term == 0, 0, np.log(exp_term)) 
+    tau_replicated = np.repeat(tau[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
+    theta = tau_replicated * tau_replicated.transpose((1, 0, 3, 2))
+    tau_tau_log_b = theta * exp_term
+    for i in range(n_nodes):
+        tau_tau_log_b[i, i, :, :] = 0
+    sum_tau_tau_log_b = np.sum(tau_tau_log_b, axis=(0, 1, 2, 3)) / 2
+    
+    J_R_x += sum_tau_tau_log_b
+    
+    # tau_log_tau = np.where(tau == 0, 0, tau * np.log(tau))
+    tau_log_tau = np.zeros_like(tau)
+    non_zero_indices = tau != 0
+    tau_log_tau[non_zero_indices] = tau[non_zero_indices] * np.log(tau[non_zero_indices])
+    sum_tau_log_tau = np.sum(tau_log_tau, axis=(0,1))
+    
+    J_R_x += sum_tau_log_tau
+
+    return J_R_x
+
+def log_likehood(graph_edges, tau, pi, priors):
+    # From tau we create Z
+    max_values = np.max(tau, axis=1, keepdims=True)
+    mask = (tau == max_values)
+    Z = np.zeros_like(tau)
+    Z[mask] = 1
+    
+    log_likehood = 0
+    
+    Z_log_priors = np.where(priors == 0, 0, Z * np.log(priors))
+    sum_Z_log_priors = np.sum(Z_log_priors, axis=(0, 1))
+    
+    log_likehood += sum_Z_log_priors
+    
+    exp_term = (pi ** graph_edges[:, :, np.newaxis, np.newaxis]) * ((1 - pi) ** (1 - graph_edges[:, :, np.newaxis, np.newaxis]))
+    exp_term = np.where(exp_term == 0, 0, np.log(exp_term)) 
+    Z_replicated = np.repeat(Z[:, np.newaxis, :, np.newaxis], graph_edges.shape[0], axis=1)
+    theta = Z_replicated * Z_replicated.transpose((1, 0, 3, 2))
+    Z_Z_log_b = theta * exp_term
+    for i in range(graph_edges.shape[0]):
+        Z_Z_log_b[i, i, :, :] = 0
+    sum_Z_Z_log_b = np.sum(Z_Z_log_b, axis=(0, 1, 2, 3)) / 2
+    
+    log_likehood += sum_Z_Z_log_b
+
+    return log_likehood    
+
+def ICL(graph_edges, tau, pi, priors):
+    icl = 0
+    
+    log_lik = log_likehood(graph_edges, tau, pi, priors)
+    
+    icl += log_lik
+    
+    n_nodes, n_clusters = tau.shape
+    
+    m_Q = -1/4 * (n_clusters + 1) * n_clusters * np.log(n_nodes * (n_nodes- 1 ) / 2) - (n_clusters - 1) / 2 * np.log(n_nodes)
+    
+    icl += m_Q
+    
+    return icl
+ 
+def from_tau_to_Z(tau):
+    max_values = np.max(tau, axis=1, keepdims=True)
+    mask = (tau == max_values)
+    z = np.zeros_like(tau)
+    z[mask] = 1
+    return z
+   
+def main(X, n_clusters, max_iter = 100, method = "spectral"):
+    n_nodes, _ = X.shape
+
+    G = nx.from_numpy_array(X)
+    
+    # Initialize tau 
+    if method == "spectral":
+        tau = spectral_clustering(G, n_clusters)
+    elif method == "random":
+        tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
+        tau = tau / tau.sum(axis=1, keepdims=True)
+    elif method == "hierarchical":
+        tau = hierarchical_clustering(G, n_clusters)
+    elif method == 'modularity':
+        tau = modularity_clustering(G, n_clusters)
+        
+    finished = False
+    current_iter = 0
+    tab_jrx = []
+ 
+    while current_iter < max_iter and not finished:
+        priors, pi = return_priors_pi(X, tau.copy())
+        
+        tab_jrx.append(J_R_x(X, tau, pi, priors))
+        new_tau = appro_tau(tau.copy(), X, pi.copy(), priors.copy())
+        # new_tau = approximate_tau_step_by_step(tau.copy(), X, pi.copy(), priors.copy())
+        
+        if np.any(np.isnan(new_tau)):
+            break
+        diff = new_tau.copy() - tau.copy()
+        
+        tau = new_tau.copy()
+
+        current_iter += 1
+    return priors, pi, tau, tab_jrx
 
 def get_X_from_graph(graph):
+    return nx.to_numpy_array(graph)
     n_nodes = len(graph.nodes)
     graph_edges = np.zeros((n_nodes, n_nodes), dtype=int)
     for i, j in graph.edges:
@@ -221,4 +213,87 @@ def get_X_from_graph(graph):
         graph_edges[j, i] = 1
         
     return graph_edges
+
+class mixtureModel():
+    def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral'):
+        self.graph = graph
+        self.graph_edges = get_X_from_graph(graph)
+        self.max_iter = max_iter_EM
+        self.initilisation_method = initilisation_method
+        self.results = {}
     
+    def EM(self, n_clusters, max_iter = None, initilisation_method = None):
+        if max_iter == None:
+            max_iter = self.max_iter
+        if initilisation_method == None:
+            initilisation_method = self.initilisation_method
+        priors, pi, tau, tab_jrx = main(self.graph_edges, n_clusters, max_iter = max_iter, method = initilisation_method)
+        ICL_clusters = ICL(self.graph_edges, tau, pi, priors)
+        result = {'pi': pi, 'tau' : tau, 'jrx' : tab_jrx, 'priors' : priors, 'ICL' : ICL_clusters, 'max_iter' : max_iter, 'initialisation' : initilisation_method, 'n_clusters' : n_clusters}
+        self.results[n_clusters] = result
+        
+    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None):
+        if max_iter == None:
+            max_iter = self.max_iter
+        if initilisation_method == None:
+            initilisation_method = self.initilisation_method
+        if n_clusters == None:
+            for n_cluster in tab_n_clusters:
+                self.EM(n_cluster, max_iter, initilisation_method)
+        else :
+            self.EM(n_clusters, max_iter, initilisation_method)
+            
+    def plot_jrx_several_plot(self, tab_n_clusters):
+        for n_clusters in tab_n_clusters:
+            plot_JRX(self.results[n_clusters]['jrx'], n_clusters)
+    
+    def plot_jrx(self):
+        for n_clusters in self.results.keys():
+            # Tracer le graphique en fonction des indices
+            plt.plot(self.results[n_clusters]['jrx'], label=f'{n_clusters} clusters') 
+
+        plt.title(r'$\mathcal{J}(R_{\mathcal{X}})$ values')
+        # Ajouter des étiquettes aux axes
+        plt.xlabel('Iterations')
+        plt.ylabel(r'$\mathcal{J}(R_{\mathcal{X}})$')
+
+        # Ajouter une légende au graphique
+        plt.legend()
+
+        # Afficher le graphique
+        plt.show()
+            
+    def plot_icl(self):
+        tab_clusters = []
+        tab_ICL = []
+        for n_clusters in self.results.keys():
+            tab_clusters.append(n_clusters)
+            tab_ICL.append(self.results[n_clusters]['ICL'])
+        plot_ICL(tab_clusters, tab_ICL)
+    
+    def plot_adjency_matrix(self, n_clusters):
+        # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters
+        z = from_tau_to_Z(self.results[n_clusters]['tau'])
+        cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
+
+        # Permuter la matrice d'adjacence
+        adjacency_matrix = nx.to_numpy_array(self.graph)
+        new_order = np.concatenate([cluster_indices[q] for q in range(n_clusters)])
+        permuted_matrix = adjacency_matrix[np.ix_(new_order, new_order)]
+        
+        # Visualisation de la matrice d'adjacence triée
+        plt.figure(figsize=(6, 6))
+        plt.spy(permuted_matrix, markersize=0.5)
+
+        # Ajouter des délimitations entre les clusters
+        current_idx = 0
+        for q in range(n_clusters):
+            cluster_size = len(cluster_indices[q])
+            if cluster_size > 0:
+                current_idx += cluster_size
+                plt.axvline(x=current_idx - 0.5, color='r', linestyle='--')
+                plt.axhline(y=current_idx - 0.5, color='r', linestyle='--')
+
+        plt.title("Matrice d'adjacence avec nœuds regroupés par cluster")
+        plt.show()
+

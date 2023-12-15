@@ -3,6 +3,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from utils import plot_JRX, plot_ICL
+import scipy.sparse as sp
+
 
 from scipy.sparse.linalg import eigs
 from scipy.sparse import diags, eye 
@@ -32,14 +34,32 @@ def return_priors_pi(X, tau):
     # and X is a 2D numpy array of shape (n_nodes, n_nodes)
     
     # Calculate the nominator
-    tau_replicated = np.repeat(tau[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
-    theta = tau_replicated * tau_replicated.transpose((1, 0, 3, 2))
-    X_expanded = X[:, :, np.newaxis, np.newaxis]
-    nominator = np.sum(theta * X_expanded, axis=(0, 1))
+    tau_dense = tau.toarray()  # Convert to dense array
 
+    # Perform the reshaping operation
+    tau_reshaped =  np.repeat(tau_dense[:, np.newaxis, :, np.newaxis], n_nodes, axis=1)
+
+    # Convert back to sparse format if necessary
+    tau_replicated = sp.csr_matrix(tau_reshaped)
+    tau_replicated_transpose = sp.csr_matrix(tau_replicated.transpose((1, 0, 3, 2)))
+    
+    theta = tau_replicated * tau_replicated_transpose
+    graph_edges_dense = graph_edges_dense.toarray()
+    graph_edges_dense = graph_edges_dense[:, :, np.newaxis, np.newaxis]
+    graph_edges = sp.csr_matrix(graph_edges_dense)
+    
+    product = sp.csr_matrix.multiply(theta, graph_edges)  # Element-wise multiplication
+
+    # Sum over one axis
+    sum_axis_0 = product.sum(axis=0)
+
+    # Sum over the second axis
+    nominator = sum_axis_0.sum(axis=1)
+    
     # Calculate the denominator
     # The shape of the denominator is (n_cluster, n_cluster)
-    denominator = np.sum(theta, axis=(0, 1))
+    denominator = theta.sum(axis=0)
+    denominator = denominator.sum(axis=1)
 
     # Calculate pi avoiding division by zero
     # Where denominator is zero, we set pi to zero 

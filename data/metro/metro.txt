@@ -1,0 +1,337 @@
+# LIGNE 1
+La Défense
+Esplanade de la Défense
+Pont de Neuilly
+Les Sablons
+Porte Maillot
+Argentine
+Charles de Gaulle – Étoile
+Georges V
+Franklin D. Roosevelt
+Champs Elysées–Clemenceau
+Concorde
+Tuileries
+Palais Royal–Musée du Louvre
+Louvre—Rivoli
+Châtelet
+Hôtel de Ville
+Saint-Paul
+Bastille
+Gare de Lyon
+Reuilly—Diderot
+Nation
+Porte de Vincennes
+Saint-Mandé
+Bérault
+Château de Vincennes
+
+# LIGNE 2
+Porte Dauphine
+Victor Hugo
+Charles de Gaulle —Étoile
+Ternes
+Courcelles
+Monceau
+Villiers
+Rome
+Place de Clichy
+Blanche
+Pigalle
+Anvers
+Barbès —Rochechouart
+La Chapelle
+Stalingrad
+Jaurès
+Colonel Fabien
+Belleville
+Couronnes
+Ménilmontant
+Père Lachaise
+Philippe Auguste
+Alexandre Dumas
+Avron
+Nation
+
+# LIGNE 3
+Pont de Levallois—Bécon
+Anatole France
+Louise Michel
+Porte de Champerret
+Pereire
+Wagram
+Malesherbes
+Villiers
+Europe
+Saint-Lazare
+Havre —Caumartin
+Opéra
+Quatre-Septembre
+Bourse
+Sentier
+Réaumur—Sébastopol
+Arts et Métiers
+Temple
+République
+Parmentier
+Rue Saint-Maur
+Père Lachaise
+Gambetta
+Porte de Bagnolet
+Gallieni
+
+# LIGNE 4
+Porte de Clignancourt
+Simplon
+Marcadet—Poissonniers
+Château Rouge
+Barbès—Rochechouart
+Gare du Nord
+Gare de l’Est
+Château d’Eau
+Strasbourg—Saint-Denis
+Réaumur—Sébastopol
+Étienne Marcel
+Les Halles
+Châtelet
+Cité
+Saint-Michel
+Odéon
+Saint-Germain-des-Prés
+Saint-Sulpice
+Saint-Placide
+Montparnasse—Bienvenüe
+Vavin
+Raspail
+Denfert-Rochereau
+Mouton-Duvernet
+Alésia
+Porte d’Orléans
+Mairie de Montrouge
+Barbara
+Bagneux—Lucie Aubrac
+
+# LIGNE 5
+Bobigny ‒ Pablo Picasso
+Bobigny‒Pantin-R.Queneau
+Eglise de Pantin
+Hoche
+Porte de Pantin
+Ourcq
+Laumière
+Jaurès
+Stalingrad
+Gare du Nord
+Gare de l’Est
+Jacques Bonsergent
+République
+Oberkampf
+Richard-Lenoir
+Bréguet — Sabin
+Bastille
+Quai de la Rapée
+Gare d’Austerlitz
+Saint-Marcel
+Campo-Formio
+Place d’Italie
+
+# LIGNE 6
+Charles de Gaulle ‒ Étoile
+Kléber
+Boissière
+Trocadéro
+Passy
+Bir-Hakeim
+Dupleix
+La Motte-Picquet‒ Grenelle
+Cambronne
+Sèvres– Lecourbe
+Pasteur
+Montparnasse ‒ Bienvenüe
+Edgar Quinet
+Raspail
+Denfert-Rochereau
+Saint-Jacques
+Glacière
+Corvisart
+Place d'Italie
+Nationale
+Chevaleret
+Quai de la Gare
+Bercy
+Dugommier
+Daumesnil
+Bel-Air
+Picpus
+Nation
+
+# LIGNE 7
+La Courneuve – 8 mai 1945
+Fort d’Aubervilliers
+Aubervilliers – Pantin– Quatre
+Chemins
+Porte de la Villette
+Corentin Carriou
+Crimée
+Riquet
+Stalingrad
+Louis Blanc
+Château-Landon
+Gare de l’Est
+Poissonnière
+Cadet
+Le Peletier
+Chaussée d’Antin– LaFayette
+Opéra
+Pyramides
+Palais Royal– Musée du Louvre
+Pont Neuf
+Châtelet
+Pont Marie
+Sully– Morland
+Jussieu
+Place Monge
+Censier– Daubenton
+Les Gobelins
+Place d’Italie
+Tolbiac
+Maison Blanche
+
+# LIGNE 8 
+Balard
+Lourmel
+Boucicaut
+Félix Faure
+Commerce
+La Motte-Picquet‒ Grenelle
+École Militaire
+La Tour-Maubourg
+Invalides
+Concorde
+Madeleine
+Opéra
+Richelieu‒ Drouot
+Grands Boulevards
+Bonne Nouvelle
+Strasbourg‒ Saint-Denis
+République
+Filles du Calvaire
+Saint-Sébastien‒ Froissart
+Chemin Vert
+Bastille
+Ledru-Rollin
+Faidherbe‒ Chaligny
+Reuilly‒ Diderot
+Montgallet
+Daumesnil
+Michel Bizot
+Porte Dorée
+Porte de Charenton
+Liberté
+Charenton‒ Ecoles
+École Vétérinaire de Maisons-Alfort
+Maisons-Alfort‒ Stade
+Maisons-Alfort‒ Les Juilliottes
+Créteil‒ L'Échat
+Créteil‒ Université
+Créteil‒ Préfecture
+
+# LIGNE 9 
+Pont de Sèvres
+Billancourt
+Marcel Sembat
+Porte de Saint-Cloud 
+Exelmans
+Michel-Ange ‒ Molitor 
+Michel-Ange ‒ Auteuil
+Jasmin
+Ranelagh
+La Muette
+Rue de la Pompe
+Trocadéro
+Iéna
+Alma‒ Marceau
+Franklin D. Roosevelt
+Saint-Philippe-du-Roule
+Miromesnil
+Saint-Augustin
+Havre ‒ Caumartin
+Chaussée d’Antin ‒ La Fayette
+Richelieu ‒ Drouot
+Grands Boulevards
+Bonne Nouvelle
+Strasbourg ‒ Saint-Denis
+République
+Oberkampf
+Saint-Ambroise
+Voltaire
+Charonne
+Rue des Boulets
+Nation
+Buzenval
+Maraîchers
+Porte de Montreuil
+Robespierre
+Croix de Chavaux
+
+# LIGNE 11
+Châtelet
+Hôtel de Ville
+Rambuteau
+Arts et Métiers
+République
+Goncourt
+Belleville
+Pyrénées
+Jourdain
+Place des Fêtes
+Télégraphe
+Porte des Lilas
+Mairie des Lilas
+
+# LIGNE 12
+Mairie d’Aubervilliers
+Aimé Césaire
+Front Populaire
+Porte de la Chapelle
+Marx Dormoy
+Marcadet — Poissonniers
+Jules Joffrin
+Lamarck—Caulaincourt
+Abbesses
+Pigalle
+Saint-Georges
+Notre-Dame-de-Lorette
+Trinité — d’Estienne d’Orves
+Saint-Lazare
+Madeleine
+Concorde
+Assemblée Nationale
+Solférino
+Rue du Bac
+Sèvres – Babylone
+Rennes
+Notre-Dame-des-Champs
+Montparnasse — Bienvenüe
+Falguière
+Pasteur
+Volontaires
+Vaugirard
+Convention
+Porte de Versailles
+Corentin Celton
+Mairie D'Issy
+
+# LIGNE 14
+Mairie de Saint-Ouen
+Saint-Ouen
+Porte de Clichy
+Pont Cardinet
+Saint-Lazare
+Madeleine
+Pyramides
+Châtelet
+Gare de Lyon
+Bercy
+Cour Saint-Émilion
+Bibliothèque François Mitterrand
+Olympiades

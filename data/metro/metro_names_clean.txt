@@ -1,0 +1,339 @@
+# ligne 1
+la defense
+esplanade de la defense
+pont de neuilly
+les sablons
+porte maillot
+argentine
+charles de gaulle etoile
+george v
+franklin d. roosevelt
+champs elysees clemenceau
+concorde
+tuileries
+palais royal musee du louvre
+louvre rivoli
+chatelet
+hotel de ville
+saint paul
+bastille
+gare de lyon
+reuilly diderot
+nation
+porte de vincennes
+saint mande
+berault
+chateau de vincennes
+
+# ligne 2
+porte dauphine
+victor hugo
+charles de gaulle etoile
+ternes
+courcelles
+monceau
+villiers
+rome
+place de clichy
+blanche
+pigalle
+anvers
+barbes rochechouart
+la chapelle
+stalingrad
+jaures
+colonel fabien
+belleville
+couronnes
+menilmontant
+pere lachaise
+philippe auguste
+alexandre dumas
+avron
+nation
+
+# ligne 3
+pont de levallois
+anatole france
+louise michel
+porte de champerret
+pereire levallois
+wagram
+malesherbes
+villiers
+europe
+saint lazare
+havre caumartin
+opera
+quatre septembre
+bourse
+sentier
+reaumur sebastopol
+arts et metiers
+temple
+republique
+parmentier
+rue saint maur
+pere lachaise
+gambetta
+porte de bagnolet
+gallieni
+
+# ligne 4
+porte de clignancourt
+simplon
+marcadet poissonniers
+chateau rouge
+barbes rochechouart
+gare du nord
+gare de l'est
+chateau d'eau
+strasbourg saint denis
+reaumur sebastopol
+etienne marcel
+les halles
+chatelet
+cite
+saint michel
+odeon
+saint germain des pres
+saint sulpice
+saint placide
+montparnasse bienvenue
+vavin
+raspail
+denfert rochereau
+mouton duvernet
+alesia
+porte d'orleans
+mairie de montrouge
+barbara
+bagneux lucie aubrac
+
+# ligne 5
+bobigny pablo picasso
+bobigny pantin raymond queneau
+eglise de pantin
+hoche
+porte de pantin
+ourcq
+laumiere
+jaures
+stalingrad
+gare du nord
+gare de l'est
+jacques bonsergent
+republique
+oberkampf
+richard lenoir
+breguet sabin
+bastille
+quai de la rapee
+gare d'austerlitz
+saint marcel
+campo formio
+place d'italie
+
+# ligne 6
+charles de gaulle etoile
+kleber
+boissiere
+trocadero
+passy
+bir hakeim
+dupleix
+la motte picquet grenelle
+cambronne
+sevres lecourbe
+pasteur
+montparnasse bienvenue
+edgar quinet
+raspail
+denfert rochereau
+saint jacques
+glaciere
+corvisart
+place d'italie
+nationale
+chevaleret
+quai de la gare
+bercy
+dugommier
+daumesnil
+bel air
+picpus
+nation
+
+# ligne 7
+la courneuve 8 mai 1945
+fort d'aubervilliers
+aubervilliers pantin quatre
+chemins
+porte de la villette
+corentin carriou
+crimee
+riquet
+stalingrad
+louis blanc
+chateau landon
+gare de l'est
+poissonniere
+cadet
+le peletier
+chaussee d'antin lafayette
+opera
+pyramides
+palais royal musee du louvre
+pont neuf
+chatelet
+pont marie
+sully morland
+jussieu
+place monge
+censier daubenton
+les gobelins
+place d'italie
+tolbiac
+maison blanche
+
+# ligne 8
+balard
+lourmel
+boucicaut
+felix faure
+commerce
+la motte picquet grenelle
+ecole militaire
+la tour maubourg
+invalides
+concorde
+madeleine
+opera
+richelieu drouot
+grands boulevards
+bonne nouvelle
+strasbourg saint denis
+republique
+filles du calvaire
+saint sebastien froissart
+chemin vert
+bastille
+ledru rollin
+faidherbe chaligny
+reuilly diderot
+montgallet
+daumesnil
+michel bizot
+porte doree
+porte de charenton
+liberte
+charenton ecoles
+ecole veterinaire de maisons alfort
+maisons alfort stade
+maisons alfort les juilliottes
+creteil l'echat
+creteil universite
+creteil prefecture
+creteil pointe du lac
+
+# ligne 9
+pont de sevres
+billancourt
+marcel sembat
+porte de saint cloud
+exelmans
+michel ange molitor
+michel ange auteuil
+jasmin
+ranelagh
+la muette
+rue de la pompe
+trocadero
+iena
+alma marceau
+franklin d. roosevelt
+saint philippe du roule
+miromesnil
+saint augustin
+havre caumartin
+chaussee d'antin la fayette
+richelieu drouot
+grands boulevards
+bonne nouvelle
+strasbourg saint denis
+republique
+oberkampf
+saint ambroise
+voltaire
+charonne
+rue des boulets
+nation
+buzenval
+maraichers
+porte de montreuil
+robespierre
+croix de chavaux
+mairie de montreuil
+
+# ligne 11
+chatelet
+hotel de ville
+rambuteau
+arts et metiers
+republique
+goncourt
+belleville
+pyrenees
+jourdain
+place des fetes
+telegraphe
+porte des lilas
+mairie des lilas
+
+# ligne 12
+mairie d'aubervilliers
+aime cesaire
+front populaire
+porte de la chapelle
+marx dormoy
+marcadet poissonniers
+jules joffrin
+lamarck caulaincourt
+abbesses
+pigalle
+saint georges
+notre dame de lorette
+trinite d'estienne d'orves
+saint lazare
+madeleine
+concorde
+assemblee nationale
+solferino
+rue du bac
+sevres babylone
+rennes
+notre dame des champs
+montparnasse bienvenue
+falguiere
+pasteur
+volontaires
+vaugirard
+convention
+porte de versailles
+corentin celton
+mairie d'issy
+
+# ligne 14
+mairie de saint ouen
+saint ouen
+porte de clichy
+pont cardinet
+saint lazare
+madeleine
+pyramides
+chatelet
+gare de lyon
+bercy
+cour saint emilion
+bibliotheque francois mitterrand
+olympiades

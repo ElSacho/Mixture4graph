@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 
-from vizualize_data import data_visualisation
+import vizualize_data as vd
 
 from EM_torch import mixtureModel
 
@@ -10,18 +10,37 @@ import os
 
 from EM_torch import mixtureModel
 
-print("Name of the experiment results files : " , end="")
+print("Name of the experiment results folder : " , end="")
 save_name = input()
 print("Working on it")
+# Create the directory
+os.makedirs(os.path.join("results",save_name), exist_ok=True)
 
-graph = nx.read_gml("data/lesmis/lesmis.gml")
-data_visualisation = data_visualisation(graph)
+# Check if the directory was created successfully
+os.path.exists(os.path.join("results",save_name))
 
-data_visualisation.print_generalitize()
-data_visualisation.plot_figure_graph()
+print("What data do you want to use ? [metro, political, twitter, miserables] : " , end="")
+data_name = input()
+print("Working on it")
+if data_name == 'metro':
+    graph = nx.read_gml("data/metro/final_metro_network.gml")
+elif data_name == 'political':
+    graph = nx.read_gml("data/political_portrait/political_extraction.gml")
+elif data_name == 'twitter':
+    graph = nx.read("data/congress_network/congress_new_edgelist.txt")
+elif data_name == 'miserables':
+    graph = nx.read_gml("data/lesmis/lesmis.gml")
+else:
+    graph = nx.read_gml("data/lesmis/lesmis.gml")
+    
+    
+
+
+vd.print_generalitize(graph)
+vd.plot_figure_graph(graph)
 
 model = mixtureModel(graph, initilisation_method="random")
-tab_clusters = range(2, 26)
+tab_clusters = range(2, 40)
 
 
 model.fit(tab_clusters, save_path=os.path.join("results",'results_'+save_name))

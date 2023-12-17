@@ -37,7 +37,7 @@ vd.print_generalitize(graph)
 vd.plot_figure_graph(graph, save_path=os.path.join("results",save_name,'graph_information'))
 
 model = mixtureModel(graph, initilisation_method="random")
-tab_clusters = range(2, 20)
+tab_clusters = range(2, 11)
 
 
 model.fit(tab_clusters, save_path=os.path.join("results",save_name,'results'))

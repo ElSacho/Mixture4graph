@@ -37,6 +37,7 @@ model = mixtureModel(graph, initilisation_method="random")
 tab_clusters = range(2, 11)
 
 
+
 model.fit(tab_clusters, save_path=os.path.join("results",save_name,'results'))
 
 model.plot_jrx(save_path=os.path.join("results",save_name,'jrx_generate'))

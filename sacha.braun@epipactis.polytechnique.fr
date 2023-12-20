@@ -38,10 +38,10 @@ isolated_nodes = list(nx.isolates(graph))
 graph.remove_nodes_from(isolated_nodes)
 
 model = mixtureModel(graph)
-tab_clusters = range(2, 20)
-# tab_clusters = range(2, 3)
+# tab_clusters = range(2, 11)
+tab_clusters = range(2, 3)
 
-model.precise_fit(tab_clusters, nbr_iter_per_cluster=3, max_iter_em=20, list_initialisation_methods = ['spectral', 'modularity','random'])
+model.precise_fit(tab_clusters, nbr_iter_per_cluster=1 , max_iter_em=20, list_initialisation_methods = ['spectral', 'modularity','random'])
 model.plot_repeated_ICL(save_path=f'all_ICL_{data_name}')
 
 model.plot_jrx(save_path=os.path.join("results",save_name,'jrx_generate'))

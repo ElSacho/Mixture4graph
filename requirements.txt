@@ -5,3 +5,4 @@ matplotlib
 scikit-learn
 notebook
 community
+python-louvain

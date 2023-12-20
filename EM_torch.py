@@ -181,6 +181,19 @@ def from_tau_to_Z(tau):
     z = torch.zeros_like(tau)
     z[mask] = 1
     return z
+
+def calculated_empirical_clustering_coefficient(priors, pi):
+    n_cluster = pi.shape[0]
+    num = 0
+    den = 0
+    for q in range(n_cluster):
+        for l in range(n_cluster):
+            for m in range(n_cluster):
+                num += priors[q]*priors[l]*priors[m] * pi[q,l]* pi[q,m]* pi[m,l]
+                den += priors[q]*priors[l]*priors[m] * pi[q,l]* pi[q,m]
+    if den != 0:
+        return num / den
+    return 0
    
 def main(graph_edges, n_clusters, max_iter = 100, method = "spectral"):
     n_nodes, _ = graph_edges.shape

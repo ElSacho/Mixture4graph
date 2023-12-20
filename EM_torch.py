@@ -238,13 +238,17 @@ def get_X_from_graph(graph):
     return graph_edges
 
 class mixtureModel():
-    def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral'):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral', use_GPU = True):
+        if use_GPU :
+            DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            DEVICE = 'cpu'
         self.graph = graph
         self.graph_edges = get_X_from_graph(graph)
         self.max_iter = max_iter_EM
         self.initilisation_method = initilisation_method
         self.results = {}
+        self.ICL_values = {}
     
     def EM(self, n_clusters, max_iter = None, initilisation_method = None):
         if max_iter == None:
@@ -256,7 +260,7 @@ class mixtureModel():
         result = {'pi': pi.to('cpu').numpy(), 'tau' : tau.to('cpu').numpy(), 'jrx' : tab_jrx, 'priors' : priors.to('cpu').numpy(), 'ICL' : ICL_clusters, 'max_iter' : max_iter, 'initialisation' : initilisation_method, 'n_clusters' : n_clusters}
         self.results[n_clusters] = result
         
-    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None, save_path = "save_results.pkl"):
+    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None, save_path = "save_results.pkl", print_fit_finish = True):
         if max_iter == None:
             max_iter = self.max_iter
         if initilisation_method == None:
@@ -264,7 +268,8 @@ class mixtureModel():
         if n_clusters == None:
             for n_cluster in tab_n_clusters:
                 self.EM(n_cluster, max_iter, initilisation_method)
-                print('Fit finished for ', n_cluster, ' clusters ')
+                if print_fit_finish:
+                    print('Fit finished for ', n_cluster, ' clusters ')
         else :
             self.EM(n_clusters, max_iter, initilisation_method)
         with open(save_path+'.pkl', 'wb') as f:
@@ -354,5 +359,47 @@ class mixtureModel():
         for q, indices in cluster_indices.items():
             clusters[q] = [item[1] for item in nodes_index if item[0] in indices] 
         return clusters
+    
+    def precise_fit_one_method(self, list_clusters, nbr_iter_per_cluster = 20, max_iter_em = 50, initialisation_method = 'random'):
+        ICL_values_method = {}
+        for n_cluster in list_clusters:
+                ICL_values_method[n_cluster] = []
+        for _ in range(nbr_iter_per_cluster):
+            self.fit(tab_n_clusters=list_clusters, max_iter=max_iter_em, initilisation_method=initialisation_method, print_fit_finish=False)
+            for n_cluster in list_clusters:
+                ICL_values_method[n_cluster].append(self.results[n_cluster]['ICL'])
+        self.ICL_values[initialisation_method] = ICL_values_method
+        self.parameters = {}
+        self.parameters['nbr_iter_per_cluster'] = nbr_iter_per_cluster
+        self.parameters['max_iter_em'] = max_iter_em
         
+    def precise_fit(self, list_clusters, nbr_iter_per_cluster = 20, max_iter_em = 50, list_initialisation_methods = ['random']):
+        for method in list_initialisation_methods:
+            self.precise_fit_one_method(list_clusters, nbr_iter_per_cluster = nbr_iter_per_cluster, max_iter_em = max_iter_em, initialisation_method=method)
+                
+    def plot_repeated_ICL(self, list_methods = None, save_path = None):
+        # Calcul des moyennes, écarts-types, et intervalles de confiance
+        plt.figure(figsize=(10, 6))
+        colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black']
+        if list_methods ==  None:
+            list_methods = list(self.ICL_values.keys())
+        for idx, method in enumerate(list_methods):
+            keys = list(self.ICL_values[method].keys())
+            means = [np.mean(self.ICL_values[method][key]) for key in keys]
+            std_devs = [np.std(self.ICL_values[method][key]) for key in keys]
 
+            # Calcul de l'intervalle de confiance à 95%
+            confidence_interval = [1.96 * std / np.sqrt(len(self.ICL_values[method][key])) for std, key in zip(std_devs, keys)]
+            lower_bound = [mean - ci for mean, ci in zip(means, confidence_interval)]
+            upper_bound = [mean + ci for mean, ci in zip(means, confidence_interval)]
+
+            # Création du graphique
+            plt.plot(keys, means, label=f"Method is {method}", color=colors[idx], marker='o')
+            plt.fill_between(keys, lower_bound, upper_bound, color=colors[idx], alpha=0.2)
+        
+        plt.title(f"Average ICL values after {self.parameters['nbr_iter_per_cluster']} EM algorithms")
+        plt.xlabel("Number of classes")
+        plt.ylabel("ICL values")
+        plt.legend()
+        plt.grid(True)
+        plt.show()

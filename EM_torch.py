@@ -50,6 +50,12 @@ def return_priors_pi(graph_edges, tau):
 
     return prior, pi
 
+def return_priors_pi_from_graph(graph, tau):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    tensor_tau = torch.Tensor(tau).to(device)
+    prior, pi = return_priors_pi(get_X_from_graph(graph), tensor_tau)
+    return prior.numpy(), pi.numpy()
+
 def appro_tau(tau, graph_edges, pi, priors, eps = 1e-04, max_iter = 50):    
     
     finish = False
@@ -58,7 +64,8 @@ def appro_tau(tau, graph_edges, pi, priors, eps = 1e-04, max_iter = 50):
     while not finish and current_iter < max_iter:
         old_tau = tau
         # Create index arrays
-        exp_term = (pi ** graph_edges[:, :, None, None]) * ((1 - pi) ** (1 - graph_edges[:, :, None, None]))
+        eps = torch.finfo(torch.float32).eps
+        exp_term = ( (pi+eps) ** graph_edges[:, :, None, None]) * ((1 - pi + eps) ** (1 - graph_edges[:, :, None, None]))
         K = exp_term ** old_tau[None, :, None, :]
 
         # Calculate the product along the specified axis
@@ -273,15 +280,11 @@ class mixtureModel():
             plt.plot(self.results[n_clusters]['jrx'], label=f'{n_clusters} clusters') 
 
         plt.title(r'$\mathcal{J}(R_{\mathcal{X}})$ values')
-        # Ajouter des étiquettes aux axes
         plt.xlabel('Iterations')
         plt.ylabel(r'$\mathcal{J}(R_{\mathcal{X}})$')
 
-        # Ajouter une légende au graphique
         plt.legend()
 
-        # Afficher le graphique
-        
         if save_path != None:
             plt.savefig(f'{save_path}.png')
             plt.close()
@@ -297,16 +300,15 @@ class mixtureModel():
         plot_ICL(tab_clusters, tab_ICL, save_path)
     
     def plot_adjency_matrix(self, n_clusters, save_path = None, show_names = False):
-        # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters
+        # Get the node estimated distribition
         z = from_tau_to_Z(torch.from_numpy(self.results[n_clusters]['tau']))
         cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
         
-        # Permuter la matrice d'adjacence
+        # Permutation of the adjency matrix
         adjacency_matrix = nx.to_numpy_array(self.graph)
         new_order = np.concatenate([cluster_indices[q] for q in range(n_clusters)])
         permuted_matrix = adjacency_matrix[np.ix_(new_order, new_order)]
         
-        # Visualisation de la matrice d'adjacence triée
         plt.figure(figsize=(6, 6))
         plt.spy(permuted_matrix, markersize=0.5)
         
@@ -317,7 +319,7 @@ class mixtureModel():
             plt.xticks(ticks=np.arange(len(labels)), labels=labels, rotation=90, fontsize=6)  # Rotate for better legibility
             plt.yticks(ticks=np.arange(len(labels)), labels=labels, fontsize=6)
 
-        # Ajouter des délimitations entre les clusters
+        # Add the delimitaitons between the clusters
         current_idx = 0
         for q in range(n_clusters):
             cluster_size = len(cluster_indices[q])
@@ -326,7 +328,7 @@ class mixtureModel():
                 plt.axvline(x=current_idx - 0.5, color='r', linestyle='--')
                 plt.axhline(y=current_idx - 0.5, color='r', linestyle='--')
 
-        plt.title("Matrice d'adjacence avec nœuds regroupés par cluster")
+        plt.title("Adjency matrix with nodes grouped in clusters")
         if save_path != None:
             plt.savefig(f'{save_path}.png')
             plt.close()

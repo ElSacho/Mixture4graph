@@ -8,6 +8,10 @@ from scipy.sparse import diags, eye
 from random import randint
 from sklearn.cluster import KMeans
 
+import networkx as nx
+import numpy as np
+from networkx.algorithms import community as nx_community
+
 def spectral_clustering(G, k):
     """
     :type G : networkX graph
@@ -82,7 +86,7 @@ def hierarchical_clustering(G, n_clusters):
         distance_matrix = np.vstack((distance_matrix, new_distances[:-1]))
         distance_matrix = np.column_stack((distance_matrix, new_distances))
         tau = np.zeros((n_vertices,n_clusters))
-    print('clusters', clusters)
+    # print('clusters', clusters)
     for index, sublist in enumerate(clusters):
         for l in sublist:
             tau[l, index]=1
@@ -93,6 +97,7 @@ def modularity(G, clustering):
     G (graph)
     clustering (list): n_vertices the index corresponds to the vertex, the value to the cluster
     """
+    
     
     modularity=0
     m=G.number_of_edges()
@@ -133,10 +138,23 @@ def best_modularity_change(G, clusters):
         delta_q=modularity(G,clusters_copy) - modularity(G, clusters)
         deltas_q[(i,j)]=delta_q
     max_value, i, j = max(deltas_q.values()), max(deltas_q, key=lambda k: deltas_q[k])[0], max(deltas_q, key=lambda k: deltas_q[k])[1]
-    print('Max delta', max_value, i, j)
     return max_value, i, j
 
-    
+def modularity_module(graph, n_classes):
+    # Trouver les communautés en utilisant l'algorithme de Louvain
+    communities = list(nx_community.louvain_communities(graph))
+
+    # Initialiser le vecteur tau avec des zéros
+    n_nodes = graph.number_of_nodes()
+    tau = np.zeros((n_nodes, n_classes))
+
+    # Assigner les communautés aux nœuds dans le vecteur tau
+    for comm_index, community in enumerate(communities):
+        if comm_index < n_classes:
+            for node in community:
+                tau[node, comm_index] = 1
+
+    return tau
 
 def modularity_clustering(G,n_clusters):
     n_vertices=G.number_of_nodes()

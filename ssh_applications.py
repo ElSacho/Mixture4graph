@@ -18,7 +18,6 @@ os.makedirs(os.path.join("results",save_name), exist_ok=True)
 
 print("What data do you want to use ? [metro, political, twitter, miserables] : " , end="")
 data_name = input()
-print("Working on it")
 if data_name == 'metro':
     graph = nx.read_gml("data/metro/final_metro_network.gml")
 elif data_name == 'political':
@@ -29,9 +28,7 @@ elif data_name == 'miserables':
     graph = nx.read_gml("data/lesmis/lesmis.gml")
 else:
     graph = nx.read_gml("data/lesmis/lesmis.gml")
-    
-    
-
+print("Graph uploaded")
 
 vd.print_generalitize(graph)
 vd.plot_figure_graph(graph, save_path=os.path.join("results",save_name,'graph_information'))

@@ -5,7 +5,7 @@ import torch
 import pickle
 
 from utils import plot_JRX, plot_ICL
-from initialisation_methods import spectral_clustering, hierarchical_clustering, modularity_clustering
+from initialisation_methods import spectral_clustering, hierarchical_clustering, modularity_clustering, modularity_module
 
 def return_priors_pi(graph_edges, tau):
     """
@@ -196,7 +196,7 @@ def main(graph_edges, n_clusters, max_iter = 100, method = "spectral"):
     elif method == "hierarchical":
         tau = hierarchical_clustering(G, n_clusters)
     elif method == 'modularity':
-        tau = modularity_clustering(G, n_clusters)
+        tau = modularity_module(G, n_clusters)
         
     finished = False
     current_iter = 0
@@ -260,7 +260,7 @@ class mixtureModel():
         result = {'pi': pi.to('cpu').numpy(), 'tau' : tau.to('cpu').numpy(), 'jrx' : tab_jrx, 'priors' : priors.to('cpu').numpy(), 'ICL' : ICL_clusters, 'max_iter' : max_iter, 'initialisation' : initilisation_method, 'n_clusters' : n_clusters}
         self.results[n_clusters] = result
         
-    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None, save_path = "save_results.pkl", print_fit_finish = True):
+    def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None, save_path = "save_results", print_fit_finish = True):
         if max_iter == None:
             max_iter = self.max_iter
         if initilisation_method == None:
@@ -402,4 +402,8 @@ class mixtureModel():
         plt.ylabel("ICL values")
         plt.legend()
         plt.grid(True)
-        plt.show()
+        if save_path != None:
+            plt.savefig(f'{save_path}.png')
+            plt.close()
+        else : 
+            plt.show()

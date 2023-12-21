@@ -10,7 +10,7 @@ Traditional graph analysis methods predominantly focus on node degree to infer g
 git clone https://github.com/ElSacho/Mixture4graph
 cd Mixture4graph
 pip install -r requirements.txt
-
+```
 
 ## How it Works - The notebook main_notebook.ipynb
 

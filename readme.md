@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 ## General structure
 
-We choose to implement the EM algorithm using torch tensor, because it allows to leverage GPU capacities and to fasten the computation time. Everything is implement from scratch, using torch, or numpy. We also propose a numpy version of the EM algorithm in the file old/em.py. 
+We choose to implement the EM algorithm using torch tensor, because it allows to leverage GPU capacities and to fasten the computation time. Everything is implement from scratch, using torch, or numpy. We also propose a numpy version of the EM algorithm in the file old/em.py. We also tried to produce a docstring on most of the used methods of the EM_torch.py file, if you need further information on a precise method.
 
 ## How it Works - The notebook main_notebook.ipynb
 
@@ -49,3 +49,6 @@ We also created a class `VisualizeData that you can use as `VisualizeData.print_
 
 ## Contribuer
 Some contributions of the project could include the implementation of new clustering initialization method, in the file `initialisation_methods.py , or other criterion to choose the number of clusters such as BIC, AIC or anything else.
+
+
+Alexandre François and Sacha Braun

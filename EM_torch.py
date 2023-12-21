@@ -251,7 +251,16 @@ def get_X_from_graph(graph):
     return graph_edges
 
 class mixtureModel():
-    def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral', use_GPU = True):
+    def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'random', use_GPU = True):
+        """_summary_
+
+        Args:
+            graph (nx graph): the graph on which you want to perfom your EM algorithm
+            max_iter_EM (int, optional): The number of iterations for the EM algorithm. Defaults to 50.
+            initilisation_method (str, optional): The initialisation method you want to use. Defaults to 'random'.
+            use_GPU (bool, optional): Wheter or not you want to use GPU if you have access to GPU 
+            (you may want to use_GPU=False if you have GPU memory issues) Defaults to True.
+        """
         if use_GPU :
             DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
@@ -274,6 +283,16 @@ class mixtureModel():
         self.results[n_clusters] = result
         
     def fit(self, tab_n_clusters = [2,3,4,5,6,7,8], n_clusters = None, max_iter = None, initilisation_method = None, save_path = "save_results", print_fit_finish = True):
+        """This function will fit the EM algorithm to your graph
+
+        Args:
+            tab_n_clusters (list, optional): A list of the number of clusters for which you want to perform your fit Defaults to [2,3,4,5,6,7,8].
+            n_clusters (int, optional): The number of clusters for which you want to perform your fit
+            max_iter (int, optional): The number of iterations for the EM algorithm. Defaults to 50.
+            initilisation_method (str, optional): The initialisation method you want to use. Defaults to 'spectral'.
+            save_path (str, optional): the folder in which you want to save the results. Defaults to "save_results".
+            print_fit_finish (bool, optional): print "fit finished' after each fit for a certain number of clusters. Defaults to True.
+        """
         if max_iter == None:
             max_iter = self.max_iter
         if initilisation_method == None:
@@ -289,10 +308,20 @@ class mixtureModel():
             pickle.dump(self.results, f)
             
     def plot_jrx_several_plot(self, tab_n_clusters):
+        """_summary_
+
+        Args:
+            tab_n_clusters (lis int): plot the J(R_X) functions for the input list of number of clusters
+        """
         for n_clusters in tab_n_clusters:
             plot_JRX(self.results[n_clusters]['jrx'], n_clusters)
     
     def plot_jrx(self, save_path = None):
+        """plot the J(R_X) functions for all the clusters used in the fit
+
+        Args:
+            save_path (srt, optional): the name of the file you want to save. Defaults to None.
+        """
         for n_clusters in self.results.keys():
             # Tracer le graphique en fonction des indices
             plt.plot(self.results[n_clusters]['jrx'], label=f'{n_clusters} clusters') 
@@ -310,6 +339,11 @@ class mixtureModel():
             plt.show()
             
     def plot_icl(self, save_path = None):
+        """plot the ICL value (for one iteration) of all the n_clusters used in the fit
+
+        Args:
+            save_path (srt, optional): the name of the file you want to save. Defaults to None.
+        """
         tab_clusters = []
         tab_ICL = []
         for n_clusters in self.results.keys():
@@ -318,6 +352,13 @@ class mixtureModel():
         plot_ICL(tab_clusters, tab_ICL, save_path)
     
     def plot_adjency_matrix(self, n_clusters, save_path = None, show_names = False):
+        """plot the reordered adjency matrix of the graph for the final results
+
+        Args:
+            n_clusters (int): plot the adjency matrix for the result of the EM with n_clusters classes
+            save_path (srt, optional): the name of the file you want to save. Defaults to None.
+            show_names (bool, optional): Plot the names of the nodes in the adjency matrix. Defaults to False.
+        """
         # Get the node estimated distribition
         z = from_tau_to_Z(torch.from_numpy(self.results[n_clusters]['tau']))
         cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
@@ -354,6 +395,12 @@ class mixtureModel():
             plt.show()
             
     def plot_all_adjency_matrices(self, save_path = None, show_names = False):
+        """plot all the reordered adjency matrix of the graph for the final results 
+
+        Args:
+            save_path (srt, optional): the name of the file you want to save. Defaults to None.
+            show_names (bool, optional): Plot the names of the nodes in the adjency matrix. Defaults to False.
+        """
         for n_clusters in self.results.keys():
             if save_path != None:
                 self.plot_adjency_matrix(n_clusters, save_path + "_"+ str(n_clusters)+"_clusters", show_names = show_names)
@@ -361,10 +408,23 @@ class mixtureModel():
                 self.plot_adjency_matrix(n_clusters, save_path = None, show_names = show_names)
         
     def load_results(self, results_path):
+        """Load the results from a pkl file of a previous model
+
+        Args:
+            results_path (str): where to find the pkl file
+        """
         with open(results_path, 'rb') as f:
             self.results = pickle.load(f)
 
     def get_clusters(self, n_clusters):
+        """Return a list with the nodes of each classes
+
+        Args:
+            n_clusters (int): the number of classes for which you want to see the results
+
+        Returns:
+            dic: a dictionnary with the nodes in each classes
+        """
         z = from_tau_to_Z(torch.from_numpy(self.results[n_clusters]['tau']))
         nodes_index=[(index, node) for index, node in enumerate(self.graph.nodes())]
         cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
@@ -387,10 +447,24 @@ class mixtureModel():
         self.parameters['max_iter_em'] = max_iter_em
         
     def precise_fit(self, list_clusters, nbr_iter_per_cluster = 20, max_iter_em = 50, list_initialisation_methods = ['random']):
+        """Fit the model several times on several initialisation methods
+
+        Args:
+            list_clusters (list): the list of clusters you want to use for your fit
+            nbr_iter_per_cluster (int, optional): the number of time you perform the EM per cluster. Defaults to 20.
+            max_iter_em (int, optional): the max_iter for each EM algorithm. Defaults to 50.
+            list_initialisation_methods (list, optional): the list of initialisation method you want to use. Defaults to ['random'].
+        """
         for method in list_initialisation_methods:
             self.precise_fit_one_method(list_clusters, nbr_iter_per_cluster = nbr_iter_per_cluster, max_iter_em = max_iter_em, initialisation_method=method)
                 
     def plot_repeated_ICL(self, list_methods = None, save_path = None):
+        """Plot the ICL after a precise fit, with the confidence value of each result
+
+        Args:
+            list_methods (list, optional): the list of methods for which you want to plot the results. Defaults to None.
+            save_path (str, optional): The file to save the results. Defaults to None.
+        """
         # Calcul des moyennes, écarts-types, et intervalles de confiance
         plt.figure(figsize=(10, 6))
         colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black']

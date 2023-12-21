@@ -12,6 +12,10 @@ cd Mixture4graph
 pip install -r requirements.txt
 ```
 
+## General structure
+
+We choose to implement the EM algorithm using torch tensor, because it allows to leverage GPU capacities and to fasten the computation time. Everything is implement from scratch, using torch, or numpy. We also propose a numpy version of the EM algorithm in the file old/em.py. 
+
 ## How it Works - The notebook main_notebook.ipynb
 
 You can find most of the following explanations in the notebook file.

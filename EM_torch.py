@@ -58,7 +58,8 @@ def appro_tau(tau, graph_edges, pi, priors, eps = 1e-04, max_iter = 50):
     while not finish and current_iter < max_iter:
         old_tau = tau
         # Create index arrays
-        exp_term = (pi ** graph_edges[:, :, None, None]) * ((1 - pi) ** (1 - graph_edges[:, :, None, None]))
+        eps = torch.finfo(torch.float32).eps
+        exp_term = ( (pi+eps) ** graph_edges[:, :, None, None]) * ((1 - pi + eps) ** (1 - graph_edges[:, :, None, None]))
         K = exp_term ** old_tau[None, :, None, :]
 
         # Calculate the product along the specified axis
@@ -175,7 +176,7 @@ def from_tau_to_Z(tau):
     z[mask] = 1
     return z
    
-def main(graph_edges, n_clusters, max_iter = 100, method = "spectral"):
+def main(graph_edges, n_clusters, max_iter = 20, method = "spectral"):
     n_nodes, _ = graph_edges.shape
 
     G = nx.from_numpy_array(graph_edges.to('cpu').numpy())
@@ -229,6 +230,89 @@ def get_X_from_graph(graph):
         graph_edges[j, i] = 1
         
     return graph_edges
+
+def plot_adjency_matrix_gif(n_clusters, graph, tau, save_path = None, show_names = False):
+        # Nous allons créer une matrice d'adjacence d'exemple avec des blocs pour simuler les clusters
+        z = from_tau_to_Z(tau)
+        cluster_indices = {q: np.where(z[:, q] == 1)[0] for q in range(n_clusters)}
+        
+        # Permuter la matrice d'adjacence
+        adjacency_matrix = nx.to_numpy_array(graph)
+        new_order = np.concatenate([cluster_indices[q] for q in range(n_clusters)])
+        permuted_matrix = adjacency_matrix[np.ix_(new_order, new_order)]
+        
+        # Visualisation de la matrice d'adjacence triée
+        plt.figure(figsize=(6, 6))
+        plt.spy(permuted_matrix, markersize=0.5)
+        
+        if show_names:
+            names_index = [(index, name) for index, name in enumerate(graph.nodes())]
+            index_to_name = dict(names_index)
+            labels = [index_to_name[index] for index in new_order]
+            plt.xticks(ticks=np.arange(len(labels)), labels=labels, rotation=90, fontsize=6)  # Rotate for better legibility
+            plt.yticks(ticks=np.arange(len(labels)), labels=labels, fontsize=6)
+
+        # Ajouter des délimitations entre les clusters
+        current_idx = 0
+        for q in range(n_clusters):
+            cluster_size = len(cluster_indices[q])
+            if cluster_size > 0:
+                current_idx += cluster_size
+                plt.axvline(x=current_idx - 0.5, color='r', linestyle='--')
+                plt.axhline(y=current_idx - 0.5, color='r', linestyle='--')
+
+        plt.title("Reordered adjency matrix")
+        if save_path != None:
+            plt.savefig(f'{save_path}.png')
+            plt.close()
+        else : 
+            plt.show()
+
+
+def main_for_gif(graph_edges, n_clusters, max_iter = 20, method = "random"):
+    n_nodes, _ = graph_edges.shape
+
+    G = nx.from_numpy_array(graph_edges.to('cpu').numpy())
+    
+    # Initialize tau 
+    if method == "spectral":
+        tau = spectral_clustering(G, n_clusters)
+    elif method == "random":
+        tau = np.random.uniform(0, 1, size=(n_nodes, n_clusters))
+        tau = tau / tau.sum(axis=1, keepdims=True)
+    elif method == "hierarchical":
+        tau = hierarchical_clustering(G, n_clusters)
+    elif method == 'modularity':
+        tau = modularity_clustering(G, n_clusters)
+        
+    finished = False
+    current_iter = 0
+    tab_jrx = []
+    
+    # Define the target device (CPU or CUDA/GPU)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # Move 'tau' and 'X' tensors to the target device
+    tau = torch.from_numpy(tau).to(device)
+    graph_edges = torch.Tensor(graph_edges).to(device)
+    name = f'adj_{current_iter:03}'
+    plot_adjency_matrix_gif(n_clusters, G , tau, name)
+    while current_iter < max_iter and not finished:
+        priors, pi = return_priors_pi(graph_edges, tau)
+        
+        tab_jrx.append(J_R_x(graph_edges, tau, pi, priors))
+        new_tau = appro_tau(tau, graph_edges, pi, priors)
+        # new_tau = approximate_tau_step_by_step(tau.copy(), X, pi.copy(), priors.copy())
+        
+        if torch.any(torch.isnan(new_tau)):
+            break
+    
+        tau = new_tau
+        name = f'adj_{current_iter:03}'
+        plot_adjency_matrix_gif(n_clusters, G , tau, name)    
+
+        current_iter += 1
+    return priors, pi, tau, tab_jrx
 
 class mixtureModel():
     def __init__(self, graph, max_iter_EM = 50, initilisation_method = 'spectral'):
@@ -343,6 +427,9 @@ class mixtureModel():
     def load_results(self, results_path):
         with open(results_path, 'rb') as f:
             self.results = pickle.load(f)
+            
+    def create_gif(self, n_clusters):
+        main_for_gif(self.graph_edges, n_clusters)
 
     def get_clusters(self, n_clusters):
         z = from_tau_to_Z(torch.from_numpy(self.results[n_clusters]['tau']))

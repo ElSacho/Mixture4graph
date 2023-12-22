@@ -59,7 +59,7 @@ You can find several datasets in the `data` folder. If we created the dataset fr
 
 - An X (formerly Twitter) interaction network for the 117th United States Congress House of Representatives. This was constructed using members' official Twitter handles. The Twitter API was employed to obtain all Tweets by members of Congress from February 9, 2022, to June 9, 2022. Each node represents the account of a member of Congress, connected to others through interactions such as replies, retweets, or comments on each other's tweets. The network consists of 475 nodes and 10,222 edges.
 
-## Contribuer
-Some contributions of the project could include the implementation of new clustering initialization method, in the file `initialisation_methods.py` , or other criterion to choose the number of clusters such as BIC, AIC or anything else.
+## Next step
+Some next contributions of the project could include the implementation of new clustering initialization method, in the file `initialisation_methods.py` , or other criterion to choose the number of clusters such as BIC, AIC or anything else.
 
 

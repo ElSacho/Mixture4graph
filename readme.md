@@ -25,18 +25,18 @@ We choose to implement the EM algorithm using torch tensor, because it allows to
 
 You can find most of the following explanations in the notebook file.
 
-- **Generate Graphs** \\
+- **Generate Graphs** \
 If you want to generate a graph, you need to provide the model with the prior \(\pi\), \(\alpha\), and the number of vertices you want.
-You can call the generator with the function `generate` that will return the generated graph, or `generate_and_give_tau that will return a tuple with the generated graph, and a vector to explain to which clusters all nodes belong from the generator file.
+You can call the generator with the function `generate` that will return the generated graph, or `generate_and_give_tau` that will return a tuple with the generated graph, and a vector to explain to which clusters all nodes belong from the generator file.
 
-- **Estimate Parameters**  \\
-    - To estimate the parameters of a graph, you first need to initialize a model. To do this, you can call the `mixtureModel` class. \\
+- **Estimate Parameters**  \
+    - To estimate the parameters of a graph, you first need to initialize a model. To do this, you can call the `mixtureModel` class. \
     - Then, you can fit the data with the model by calling the `fit` function. You need to specify the number of clusters you want for your fit, and you can also provide the model with a list of number of clusters. You may want to add an initialization method for the first values of \(\tau\), to test the model with several initialization methods.
     - If you want to iterate the algorithme to stabilize the results, you can use the other function `precise_fit that will iterate the fit function for nbr_iter_per_cluster time per cluster, in order to reduce and show the variance of the different methods. As a parameter, you can give a list of method that you want to use, the string argument must be 'modularity', 'spectral','random', ou 'hierarchical'. In our experiments, we only studied the first three of them as the results from 'hierarchical' were not really interesting.
 
 - **Plot the results** \\
     All the functions to plot the results are in the mixtureModel class.  
-    - `plotJRX` will plot the values of the $\mathcal{J}(R_{\mathcal(X)}) for all the clusters that has been studied
+    - `plotJRX` will plot the values of the \(\mathcal{J}(R_{\mathcal{X}})\) for all the clusters that has been studied
     - `plotICL` will plot the values of the ICL which is the value that we use to find the good number of clusters
     - `plot_adjency_matrix` will plot the adjency matrices of the final model. If you do not precise any value for the number of clusters, it will plot all the adjency matrix, or just one if you precise the one you want. You may also want to see the labels of the nodes in the adjency matrix, that you can do using using show_names = True.
 
@@ -53,11 +53,11 @@ We also created a class `VisualizeData` that you can use as `VisualizeData.print
 
 ## DataSets
 
-You can find several datasets in the `data` folder. If we created the dataset from scratch, the functions we used to create this dataset are provided in the corresponding folder. The main dataset we used are : 
+You can find several datasets in the `data` folder. If we created the dataset from scratch, the functions we used to create this dataset are provided in the corresponding folder. The main datasets we used are:
 
-    - The coappearance network of characters in the novel \textit{Les Miserables} of Victor Hugo. It comprises 77 nodes representing \textit{Les Misérables} characters and 254 edges, each edge connecting two characters that share a common scene in the book.
-    - An X (formerly Twitter) interaction network for the $117^{\text{th}}$ United States Congress House of Representatives. It was constructed by first obtaining members’ official Twitter handles. The Twitter API was then used to obtain all Tweets by members of Congress between February 9, 2022, and June 9, 2022. Each nodes represent the account of one member of the Congress, and it is connected to others when one of the two member replied, retweeted ou commented one tweet of the other member \cite{fink2023centrality}. It has has  475 nodes, and  10,222  edges. 
+- The coappearance network of characters in the novel *Les Misérables* by Victor Hugo. This dataset includes 77 nodes representing characters from *Les Misérables* and 254 edges. Each edge connects two characters that share a common scene in the book.
 
+- An X (formerly Twitter) interaction network for the 117th United States Congress House of Representatives. This was constructed using members' official Twitter handles. The Twitter API was employed to obtain all Tweets by members of Congress from February 9, 2022, to June 9, 2022. Each node represents the account of a member of Congress, connected to others through interactions such as replies, retweets, or comments on each other's tweets. The network consists of 475 nodes and 10,222 edges.
 
 ## Contribuer
 Some contributions of the project could include the implementation of new clustering initialization method, in the file `initialisation_methods.py` , or other criterion to choose the number of clusters such as BIC, AIC or anything else.

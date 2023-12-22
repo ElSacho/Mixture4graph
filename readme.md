@@ -8,7 +8,7 @@ The repository is the one we produced for our project on the paper : Franck Pica
 We did this project in the MVA course "Introduction to Probabilistic Graphical Models and Deep Generative Models", teached by P. Latouche, and P.A. Mattei, and with R. Khellaf as Teaching Assistant.
 
 <p align="center">
-  <img src="git_results/gif_example.gif" alt="4clustersexample">
+  <img src="git_results/gif_example.gif" alt="4clustersexample_gif">
   <br>
   <em>Example of the reordered adjency matrix with as the ERMG model converges</em>
 </p>
